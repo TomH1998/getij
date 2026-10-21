@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Getij Gallery</title>
+<meta name="description" content="Photos of our beautiful underwater world, from Getij.">
+<meta name="theme-color" content="#061922">
+<meta property="og:title" content="Getij Gallery">
+<meta property="og:description" content="Photos of our beautiful underwater world.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="images/whale-shark.jpg">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%23061922'/%3E%3Cpath d='M4 17c3.5-3 6.5-3 10 0s6.5 3 10 0 3.5-2.2 4.5-1.6' stroke='%237FE3E0' stroke-width='2.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="fonts.css">
+<style>
+/* Layout: een fotoboek uit de diepte. Elke foto krijgt ruimte, met een veldnotitie
+   ernaast zoals in een duiklogboek: soort, diepte, status. */
+:root {
+  --paper: #EEF4F3; --paper-2: #E2ECEB; --ink: #0B1F2A; --ink-soft: #3C5562; --line: #B9CDCF;
+  --buoy: #D94F04; --sea: #0D6874; --card: #F7FAFA;
+  --deep: #061922; --deep-2: #0B2C38; --on-deep: #E8F1F0; --on-deep-soft: #9DB9BE; --glow: #7FE3E0;
+  --f-display: "Big Shoulders Display", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  --f-body: "Instrument Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --step-0: 1.0625rem; --step-2: clamp(1.6rem, 1.2rem + 1.6vw, 2.25rem);
+  --step-4: clamp(3rem, 1.6rem + 6.4vw, 7.25rem);
+  --wrap: 1180px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0A1C25; --paper-2: #07161E; --ink: #E4EEEE; --ink-soft: #A3BABF; --line: #1F3C48;
+    --buoy: #FF7A33; --sea: #6FD0D2; --card: #0F2631; --deep: #03111A; --deep-2: #082430;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0A1C25; --paper-2: #07161E; --ink: #E4EEEE; --ink-soft: #A3BABF; --line: #1F3C48;
+  --buoy: #FF7A33; --sea: #6FD0D2; --card: #0F2631; --deep: #03111A; --deep-2: #082430;
+  color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: border-box; }
+:root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--f-body); font-size: var(--step-0); line-height: 1.6; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--deep); }
+img { max-width: 100%; display: block; }
+[hidden] { display: none !important; }
+h1, h2, h3 { font-family: var(--f-display); font-weight: 800; text-transform: uppercase; line-height: 0.95; margin: 0; text-wrap: balance; }
+p { margin: 0; }
+a { color: var(--sea); text-underline-offset: 3px; }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--buoy); outline-offset: 3px; }
+.wrap { max-width: var(--wrap); margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.eyebrow { font-family: var(--f-mono); font-size: 0.8125rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-soft); display: flex; gap: 12px; flex-wrap: wrap; }
+.eyebrow .depth { color: var(--buoy); }
+
+.site-head { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--deep); color: var(--on-deep); border-bottom: 1px solid color-mix(in srgb, var(--on-deep) 12%, transparent); }
+.site-head .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 14px; }
+.logo { display: flex; align-items: center; gap: 10px; color: var(--on-deep); text-decoration: none; font-family: var(--f-display); font-weight: 900; font-size: 1.6rem; letter-spacing: 0.08em; }
+.logo svg { width: 30px; height: 30px; flex: none; }
+.nav { display: flex; gap: clamp(14px, 2.4vw, 32px); align-items: center; }
+.nav a { color: var(--on-deep); text-decoration: none; font-size: 0.875rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; }
+.nav a:hover, .nav a[aria-current="page"] { color: var(--glow); }
+.btn { display: inline-flex; align-items: center; justify-content: center; font-family: var(--f-body); font-weight: 600; font-size: 0.875rem; letter-spacing: 0.08em; text-transform: uppercase; padding: 9px 14px; border: 2px solid currentColor; text-decoration: none; cursor: pointer; background: transparent; color: inherit; transition: background .2s, color .2s; }
+.nav .btn-solid { background: var(--buoy); border-color: var(--buoy); color: #fff; }
+.nav .btn-solid:hover { background: transparent; color: var(--buoy); }
+@media (max-width: 760px) { .nav .hide-sm { display: none; } }
+@media (max-width: 420px) { .nav { gap: 12px; } .site-head .btn { padding: 8px 10px; font-size: 0.75rem; } .logo { font-size: 1.35rem; } }
+
+/* ---------- intro ---------- */
+.intro { background: linear-gradient(180deg, var(--deep-2), var(--deep)); color: var(--on-deep); }
+.intro .wrap { padding-block: clamp(64px, 9vw, 120px) clamp(48px, 6vw, 80px); display: grid; gap: 20px; }
+.intro .eyebrow { color: var(--on-deep-soft); }
+.intro .eyebrow .depth { color: var(--glow); }
+.intro h1 { font-size: var(--step-4); font-weight: 900; max-width: 14ch; }
+.intro h1 em { font-style: normal; color: var(--glow); }
+.intro p { max-width: 56ch; color: var(--on-deep-soft); font-size: 1.25rem; line-height: 1.5; }
+
+/* ---------- uitgelichte foto ---------- */
+.feature { padding-block: clamp(48px, 7vw, 96px); }
+.feature .wrap { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: clamp(28px, 5vw, 72px); align-items: center; }
+.photo-btn { padding: 0; border: 0; background: var(--deep); cursor: zoom-in; display: block; width: 100%; position: relative; overflow: hidden; }
+.photo-btn img { width: 100%; height: auto; aspect-ratio: 934 / 1401; object-fit: cover; transition: transform 1.2s cubic-bezier(.2, .7, .2, 1); }
+.photo-btn:hover img { transform: scale(1.03); }
+.photo-btn .no { position: absolute; left: 14px; top: 12px; font-family: var(--f-mono); font-size: 0.75rem; color: var(--on-deep); background: color-mix(in srgb, var(--deep) 70%, transparent); padding: 3px 8px; letter-spacing: 0.08em; }
+.log { display: grid; gap: 18px; }
+.log h2 { font-size: clamp(2.6rem, 1.8rem + 3vw, 4.5rem); }
+.log .latin { font-family: var(--f-mono); font-size: 0.875rem; color: var(--sea); font-style: italic; }
+.log p { max-width: 52ch; }
+.facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 2px solid var(--ink); margin: 6px 0 0; }
+.facts div { padding: 14px 16px 14px 0; border-bottom: 1px solid var(--line); }
+.facts div:nth-child(even) { padding-left: 16px; border-left: 1px solid var(--line); }
+.facts dt { font-family: var(--f-mono); font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
+.facts dd { margin: 4px 0 0; font-family: var(--f-display); font-weight: 800; font-size: 1.6rem; text-transform: uppercase; line-height: 1; }
+.facts dd.status { color: var(--buoy); }
+.credit { font-family: var(--f-mono); font-size: 0.75rem; color: var(--ink-soft); }
+@media (max-width: 800px) { .feature .wrap { grid-template-columns: minmax(0, 1fr); } .photo-btn { max-width: 560px; } }
+
+/* ---------- binnenkort ---------- */
+.more { background: var(--paper-2); padding-block: clamp(48px, 7vw, 96px); }
+.more .wrap { display: grid; gap: 28px; }
+.more h2 { font-size: var(--step-2); }
+.slots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.slot { aspect-ratio: 4 / 5; border: 2px dashed var(--line); display: grid; place-items: center; text-align: center; padding: 20px; color: var(--ink-soft); font-family: var(--f-mono); font-size: 0.8125rem; letter-spacing: 0.04em; }
+.slot b { display: block; font-family: var(--f-display); font-size: 1.5rem; text-transform: uppercase; color: var(--ink); letter-spacing: 0; margin-bottom: 6px; }
+@media (max-width: 700px) { .slots { grid-template-columns: repeat(2, minmax(0, 1fr)); } .slot:nth-child(3) { display: none; } }
+
+/* ---------- lightbox ---------- */
+dialog.lightbox { border: 0; padding: 0; background: transparent; max-width: 100vw; max-height: 100vh; width: 100%; height: 100%; }
+dialog.lightbox::backdrop { background: rgba(3, 12, 18, 0.92); }
+.lightbox .inner { width: 100%; height: 100%; display: grid; place-items: center; padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+.lightbox img { max-height: calc(100vh - 32px); width: auto; }
+.lightbox .close { position: fixed; top: calc(14px + env(safe-area-inset-top, 0px)); right: calc(14px + env(safe-area-inset-right, 0px)); color: #E8F1F0; border-color: #E8F1F0; background: rgba(3, 12, 18, 0.6); }
+
+.foot { background: var(--deep); color: var(--on-deep-soft); }
+.foot .wrap { padding-block: 40px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; font-family: var(--f-mono); font-size: 0.75rem; }
+.foot a { color: var(--glow); }
+
+/* rustig opduiken bij het scrollen; zonder script staat alles er gewoon */
+.rise { transition: transform 1s cubic-bezier(.2, .7, .2, 1), opacity 1s; }
+.rise.waiting { transform: translateY(28px); opacity: .5; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .rise, .photo-btn img { transition: none; } }
+</style>
+</head>
+<body>
+
+<header class="site-head">
+  <div class="wrap">
+    <a class="logo" href="index.html" aria-label="Getij, home">
+      <svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><circle cx="16" cy="16" r="14.5" stroke="currentColor" stroke-width="2"/><path d="M3 17c3.5-3 6.5-3 10 0s6.5 3 10 0 4.5-2.4 6-1.6" stroke="#7FE3E0" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M5 22.5c3-2.4 6-2.4 9 0s6 2.4 9 0 3.6-1.8 4.6-1.2" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" opacity=".6"/></svg>
+      GETIJ
+    </a>
+    <nav class="nav" aria-label="Main menu">
+      <a class="hide-sm" href="index.html#threats">Threats</a>
+      <a class="hide-sm" href="index.html#solutions">Solutions</a>
+      <a href="gallery.html" aria-current="page">Gallery</a>
+      <a class="btn btn-solid" href="index.html#take-action">Take action</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="intro">
+    <div class="wrap">
+      <div class="eyebrow"><span class="depth">Gallery</span><span>Photos from below the surface</span></div>
+      <h1>Our beautiful <em>underwater world</em></h1>
+      <p>This is what we are protecting. Click a photo to see it full size.</p>
+    </div>
+  </section>
+
+  <section class="feature">
+    <div class="wrap">
+      <button class="photo-btn rise" type="button" data-full="images/whale-shark.jpg" aria-label="Open the whale shark photo full size">
+        <img src="images/whale-shark.jpg" width="934" height="1401" alt="A whale shark swims just below the sunlit surface, seen from behind, its dark back covered in white spots, with a school of small silver fish around its tail.">
+        <span class="no">No. 01</span>
+      </button>
+      <div class="log rise">
+        <div class="eyebrow"><span class="depth">0–10 m</span><span>Near the surface</span></div>
+        <h2>Whale shark</h2>
+        <div class="latin">Rhincodon typus</div>
+        <p>The largest fish in the sea, and completely harmless to people. A whale shark swims slowly near the surface with its mouth wide open, filtering plankton and small fish from the water. The pattern of white spots is unique to each animal, which lets researchers identify individuals from photos like this one.</p>
+        <dl class="facts">
+          <div><dt>Length</dt><dd>Up to ~18 m</dd></div>
+          <div><dt>Diet</dt><dd>Plankton</dd></div>
+          <div><dt>Range</dt><dd>Warm seas</dd></div>
+          <div><dt>IUCN status</dt><dd class="status">Endangered</dd></div>
+        </dl>
+        <p class="credit">Source: IUCN Red List (2016). Threats: collisions with ships, bycatch and fishing.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="more">
+    <div class="wrap">
+      <h2>More photos coming soon</h2>
+      <div class="slots" aria-hidden="true">
+        <div class="slot"><span><b>No. 02</b>Coral reef</span></div>
+        <div class="slot"><span><b>No. 03</b>Sea turtle</span></div>
+        <div class="slot"><span><b>No. 04</b>North Sea</span></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <span>Getij · an information site about ocean conservation</span>
+    <a href="index.html">Back to the main page</a>
+  </div>
+</footer>
+
+<dialog class="lightbox" id="lightbox" aria-label="Photo, full size">
+  <div class="inner">
+    <img id="lightbox-img" src="" alt="">
+    <button class="btn close" type="button" id="lightbox-close">Close</button>
+  </div>
+</dialog>
+
+<script>
+(function () {
+  var box = document.getElementById('lightbox');
+  var big = document.getElementById('lightbox-img');
+  [].slice.call(document.querySelectorAll('.photo-btn')).forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var img = btn.querySelector('img');
+      big.src = btn.dataset.full; big.alt = img.alt;
+      if (box.showModal) box.showModal(); else window.open(btn.dataset.full, '_blank');
+    });
+  });
+  document.getElementById('lightbox-close').addEventListener('click', function () { box.close(); });
+  box.addEventListener('click', function (e) { if (e.target !== big) box.close(); });
+
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!reduce && 'IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) { if (en.isIntersecting) { en.target.classList.remove('waiting'); io.unobserve(en.target); } });
+    }, { threshold: 0.15 });
+    [].slice.call(document.querySelectorAll('.rise')).forEach(function (el) { el.classList.add('waiting'); io.observe(el); });
+  }
+})();
+</script>
+</body>
+</html>
