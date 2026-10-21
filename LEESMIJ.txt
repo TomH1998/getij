@@ -1,0 +1,25 @@
+GETIJ - website over oceaanbescherming
+======================================
+
+Inhoud van deze map
+- index.html   de hele website (tekst, opmaak en script)
+- fonts.css    koppelt de lettertypes
+- fonts/       de lettertypes zelf (Big Shoulders Display, Instrument Sans,
+               IBM Plex Mono; alle drie vrij te gebruiken onder de SIL Open Font License)
+
+De site laadt niets van externe servers: geen Google Fonts, geen tracking,
+geen cookies. Het afvinken van acties wordt alleen lokaal in de browser van
+de bezoeker bewaard (localStorage).
+
+Online zetten (kies er een)
+1. Netlify Drop: ga naar https://app.netlify.com/drop en sleep deze map erin.
+2. GitHub Pages: zet de bestanden in een repository en zet Pages aan
+   (Settings > Pages > branch "main", map "/").
+3. Eigen hosting: upload de map via FTP naar de webroot (vaak public_html).
+
+Houd de mapstructuur intact: index.html, fonts.css en de map fonts/ moeten
+naast elkaar blijven staan.
+
+Voor publicatie
+- Controleer of de naam "Getij" vrij is (KvK-handelsregister, BOIP).
+- Cijfers zijn bijgewerkt tot oktober 2026; werk ze af en toe bij.

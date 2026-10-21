@@ -1,0 +1,592 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Getij</title>
+<meta name="description" content="Getij: the threats facing the ocean, what works to protect it, and what you can do yourself.">
+<meta name="theme-color" content="#061922">
+<meta property="og:title" content="Getij">
+<meta property="og:description" content="The threats facing the ocean, what has been proven to work, and what you can do yourself.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%23061922'/%3E%3Cpath d='M4 17c3.5-3 6.5-3 10 0s6.5 3 10 0 3.5-2.2 4.5-1.6' stroke='%237FE3E0' stroke-width='2.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="fonts.css">
+<style>
+/* Layout: een afdaling. Elke sectie ligt dieper in de waterkolom (0 m → 3.688 m),
+   een dieptemeter aan de rand loopt mee; koppen groot en kapitaal, tekst in rustige kolommen. */
+:root {
+  --paper: #EEF4F3;        /* licht zeeschuim */
+  --paper-2: #E2ECEB;      /* schemerzone */
+  --paper-3: #D5E3E3;      /* middernachtzone */
+  --ink: #0B1F2A;          /* diep marine */
+  --ink-soft: #3C5562;
+  --line: #B9CDCF;
+  --buoy: #D94F04;         /* boei-oranje, het enige signaal */
+  --sea: #0D6874;          /* zeegroen voor links en details */
+  --card: #F7FAFA;
+  --deep: #061922;         /* de diepe band: in beide thema's donker */
+  --deep-2: #0B2C38;
+  --on-deep: #E8F1F0;
+  --on-deep-soft: #9DB9BE;
+  --glow: #7FE3E0;         /* bioluminescentie */
+  --f-display: "Big Shoulders Display", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  --f-body: "Instrument Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --step--1: 0.8125rem;
+  --step-0: 1.0625rem;
+  --step-1: 1.25rem;
+  --step-2: clamp(1.6rem, 1.2rem + 1.6vw, 2.25rem);
+  --step-3: clamp(2.4rem, 1.6rem + 3.4vw, 4rem);
+  --step-4: clamp(3rem, 1.6rem + 6.4vw, 7.25rem);
+  --wrap: 1180px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0A1C25; --paper-2: #07161E; --paper-3: #041017;
+    --ink: #E4EEEE; --ink-soft: #A3BABF; --line: #1F3C48;
+    --buoy: #FF7A33; --sea: #6FD0D2; --card: #0F2631;
+    --deep: #03111A; --deep-2: #082430; --on-deep: #E8F1F0; --on-deep-soft: #9DB9BE; --glow: #7FE3E0;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0A1C25; --paper-2: #07161E; --paper-3: #041017;
+  --ink: #E4EEEE; --ink-soft: #A3BABF; --line: #1F3C48;
+  --buoy: #FF7A33; --sea: #6FD0D2; --card: #0F2631;
+  --deep: #03111A; --deep-2: #082430; --on-deep: #E8F1F0; --on-deep-soft: #9DB9BE; --glow: #7FE3E0;
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+:root { color-scheme: light; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+body { margin: 0; }
+img { max-width: 100%; }
+[hidden] { display: none !important; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--f-body);
+  font-size: var(--step-0);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+body::before {
+  content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px);
+  z-index: 10; background: var(--deep);
+}
+h1, h2, h3 { font-family: var(--f-display); font-weight: 800; text-transform: uppercase; line-height: 0.95; letter-spacing: 0.005em; margin: 0; text-wrap: balance; }
+p { margin: 0; }
+a { color: var(--sea); text-underline-offset: 3px; }
+a:focus-visible, button:focus-visible, input:focus-visible + label, label:focus-within { outline: 2px solid var(--buoy); outline-offset: 3px; }
+.wrap {
+  max-width: var(--wrap); margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.eyebrow {
+  font-family: var(--f-mono); font-size: var(--step--1); letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--ink-soft); display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+}
+.eyebrow .depth { color: var(--buoy); }
+.source { font-family: var(--f-mono); font-size: 0.75rem; color: var(--ink-soft); letter-spacing: 0.02em; }
+
+/* ---------- header ---------- */
+.site-head {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
+  background: var(--deep); color: var(--on-deep);
+  border-bottom: 1px solid color-mix(in srgb, var(--on-deep) 12%, transparent);
+}
+.site-head .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 14px; }
+.logo { display: flex; align-items: center; gap: 10px; color: var(--on-deep); text-decoration: none; font-family: var(--f-display); font-weight: 900; font-size: 1.6rem; letter-spacing: 0.08em; }
+.logo svg { width: 30px; height: 30px; flex: none; }
+.nav { display: flex; gap: clamp(14px, 2.4vw, 32px); align-items: center; }
+.nav a { color: var(--on-deep); text-decoration: none; font-size: 0.875rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; }
+.nav a:hover { color: var(--glow); }
+.btn {
+  display: inline-flex; align-items: center; gap: 10px; justify-content: center;
+  font-family: var(--f-body); font-weight: 600; font-size: 0.875rem; letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 12px 20px; border: 2px solid currentColor; text-decoration: none; cursor: pointer; background: transparent; color: inherit;
+  transition: background .2s, color .2s;
+}
+.btn-solid { background: var(--buoy); border-color: var(--buoy); color: #fff; }
+.btn-solid:hover { background: transparent; color: var(--buoy); }
+.site-head .btn { padding: 9px 14px; }
+@media (max-width: 760px) { .nav .hide-sm { display: none; } }
+@media (max-width: 420px) { .nav { gap: 12px; } .site-head .btn { padding: 8px 10px; font-size: 0.75rem; } .logo { font-size: 1.35rem; } }
+
+/* ---------- hero ---------- */
+.hero { position: relative; background: linear-gradient(180deg, var(--deep-2) 0%, var(--deep) 100%); color: var(--on-deep); overflow: hidden; isolation: isolate; }
+.hero canvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -1; display: block; }
+.hero .wrap { padding-block: clamp(88px, 13vw, 176px) clamp(64px, 9vw, 120px); display: grid; gap: 28px; }
+.hero .eyebrow { color: var(--on-deep-soft); }
+.hero .eyebrow .depth { color: var(--glow); }
+.hero h1 { font-size: var(--step-4); font-weight: 900; max-width: 12ch; }
+.hero h1 em { font-style: normal; color: var(--glow); }
+.hero .lede { max-width: 54ch; font-size: var(--step-1); color: var(--on-deep-soft); line-height: 1.5; }
+.hero .actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.hero .btn-ghost { color: var(--on-deep); }
+.hero .btn-ghost:hover { background: var(--on-deep); color: var(--deep); }
+.shark { position: absolute; z-index: -1; width: clamp(180px, 26vw, 340px); right: 6%; top: 38%; opacity: 0.22; color: var(--glow); animation: glide 38s linear infinite; }
+@keyframes glide {
+  0% { transform: translateX(30vw) translateY(0); }
+  50% { transform: translateX(-30vw) translateY(-18px); }
+  50.01% { transform: translateX(-30vw) translateY(-18px) scaleX(-1); }
+  100% { transform: translateX(30vw) translateY(0) scaleX(-1); }
+}
+
+/* ---------- cijfers ---------- */
+.zone { padding-block: clamp(64px, 9vw, 128px); }
+.zone-1 { background: var(--paper); }
+.zone-2 { background: var(--paper-2); }
+.zone-3 { background: var(--paper-3); }
+.section-head { display: grid; gap: 18px; margin-bottom: clamp(36px, 5vw, 64px); }
+.section-head h2 { font-size: var(--step-3); max-width: 16ch; }
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 2px solid var(--ink); }
+.stat { padding: 24px 20px 28px 0; display: grid; gap: 10px; align-content: start; border-bottom: 1px solid var(--line); }
+.stat + .stat { padding-left: 20px; border-left: 1px solid var(--line); }
+.stat .num { font-family: var(--f-display); font-weight: 900; font-size: clamp(3.4rem, 2.4rem + 3vw, 5.2rem); line-height: 0.9; font-variant-numeric: tabular-nums; }
+.stat .num small { font-size: 0.5em; }
+.stat p { font-size: 0.975rem; color: var(--ink-soft); }
+@media (max-width: 860px) {
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stat:nth-child(3) { padding-left: 0; border-left: 0; }
+}
+@media (max-width: 440px) {
+  .stats { grid-template-columns: minmax(0, 1fr); }
+  .stat + .stat { padding-left: 0; border-left: 0; }
+}
+.why { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(24px, 5vw, 72px); margin-top: clamp(48px, 7vw, 88px); }
+.why p { max-width: 60ch; }
+.why p:first-child::first-line { font-weight: 600; }
+@media (max-width: 760px) { .why { grid-template-columns: minmax(0, 1fr); } }
+
+/* ---------- bedreigingen ---------- */
+.threats { display: grid; border-top: 2px solid var(--ink); }
+.threat {
+  display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.4fr) minmax(0, 1.6fr);
+  gap: clamp(16px, 3vw, 48px); padding-block: clamp(28px, 4vw, 44px); border-bottom: 1px solid var(--line); align-items: start;
+}
+.threat .big { font-family: var(--f-display); font-weight: 900; font-size: clamp(3rem, 2rem + 3.4vw, 5.5rem); line-height: 0.85; color: var(--buoy); font-variant-numeric: tabular-nums; }
+.threat .big span { display: block; font-family: var(--f-mono); font-weight: 400; font-size: 0.75rem; line-height: 1.4; color: var(--ink-soft); letter-spacing: 0.04em; margin-top: 10px; text-transform: none; }
+.threat h3 { font-size: var(--step-2); }
+.threat .kicker { font-family: var(--f-mono); font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--sea); margin-bottom: 10px; }
+.threat .body { display: grid; gap: 12px; }
+@media (max-width: 900px) {
+  .threat { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); }
+  .threat .body { grid-column: 1 / -1; }
+}
+@media (max-width: 520px) { .threat { grid-template-columns: minmax(0, 1fr); } }
+
+/* ---------- statement band ---------- */
+.band { background: var(--deep); color: var(--on-deep); position: relative; overflow: hidden; }
+.band .wrap { padding-block: clamp(72px, 11vw, 150px); display: grid; gap: 24px; }
+.band blockquote { margin: 0; font-family: var(--f-display); font-weight: 900; text-transform: uppercase; font-size: var(--step-3); line-height: 0.98; max-width: 20ch; text-wrap: balance; }
+.band blockquote b { color: var(--glow); font-weight: 900; }
+.band .source { color: var(--on-deep-soft); }
+.band::after {
+  content: ""; position: absolute; inset: auto -10% -60% -10%; height: 120%;
+  background: radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--glow) 18%, transparent), transparent 60%);
+  pointer-events: none;
+}
+
+/* ---------- oplossingen ---------- */
+.solutions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px; background: var(--line); border: 2px solid var(--line); }
+.sol { background: var(--paper-2); padding: clamp(22px, 3vw, 34px); display: grid; gap: 12px; align-content: start; }
+.sol h3 { font-size: 1.75rem; }
+.sol .tag { font-family: var(--f-mono); font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--sea); }
+.sol.feature { grid-column: span 2; background: var(--card); }
+.sol.feature h3 { font-size: var(--step-2); }
+.sol .fig { font-family: var(--f-display); font-weight: 900; font-size: clamp(3rem, 2rem + 3vw, 4.75rem); color: var(--buoy); line-height: 0.9; }
+@media (max-width: 900px) { .solutions { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .solutions { grid-template-columns: minmax(0, 1fr); } .sol.feature { grid-column: auto; } }
+
+/* MPA-meter */
+.meter { display: grid; gap: 8px; margin-top: 6px; }
+.meter-bar { position: relative; height: 18px; background: color-mix(in srgb, var(--ink) 9%, transparent); }
+.meter-bar i { position: absolute; inset: 0 auto 0 0; display: block; }
+.meter-bar .m-all { width: 8.4%; background: var(--sea); }
+.meter-bar .m-strict { width: 2.8%; background: var(--buoy); }
+.meter-bar .m-goal { position: absolute; left: 30%; top: -6px; bottom: -6px; width: 2px; background: var(--ink); }
+.meter-legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-family: var(--f-mono); font-size: 0.75rem; color: var(--ink-soft); }
+.meter-legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; margin-right: 6px; vertical-align: -1px; background: var(--c); }
+
+/* ---------- doe mee ---------- */
+.act-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 900px) { .act-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .act-grid { grid-template-columns: minmax(0, 1fr); } }
+.act { position: relative; }
+.act input { position: absolute; opacity: 0; pointer-events: none; }
+.act label {
+  display: grid; gap: 10px; height: 100%; padding: 24px; cursor: pointer;
+  border: 2px solid var(--ink); background: var(--paper-3); transition: background .2s, color .2s;
+}
+.act label:hover { background: var(--card); }
+.act .row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.act .t { font-family: var(--f-display); font-weight: 800; text-transform: uppercase; line-height: 0.95; font-size: 1.6rem; }
+.act p { color: var(--ink-soft); font-size: 0.975rem; }
+.act .box { width: 26px; height: 26px; border: 2px solid var(--ink); flex: none; display: grid; place-items: center; }
+.act .box svg { width: 16px; height: 16px; opacity: 0; color: #fff; }
+.act input:checked + label { background: var(--ink); color: var(--paper); }
+.act input:checked + label p { color: color-mix(in srgb, var(--paper) 78%, transparent); }
+.act input:checked + label .box { background: var(--buoy); border-color: var(--buoy); }
+.act input:checked + label .box svg { opacity: 1; }
+.act input:focus-visible + label { outline: 2px solid var(--buoy); outline-offset: 3px; }
+.pledge-bar { margin-top: 28px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px 24px; padding-top: 20px; border-top: 2px solid var(--ink); }
+.pledge-bar strong { font-family: var(--f-display); font-size: var(--step-2); text-transform: uppercase; font-weight: 800; }
+.pledge-bar .source { max-width: 52ch; }
+
+/* ---------- dichtbij ---------- */
+.home { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: clamp(28px, 5vw, 72px); align-items: start; }
+.home .text { display: grid; gap: 16px; }
+.home .text p { max-width: 60ch; }
+.orgs { list-style: none; margin: 0; padding: 0; border-top: 2px solid var(--ink); }
+.orgs li { border-bottom: 1px solid var(--line); }
+.orgs a { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 16px; padding: 16px 0; text-decoration: none; color: var(--ink); }
+.orgs a:hover .o-name { color: var(--buoy); }
+.o-name { font-family: var(--f-display); font-weight: 800; font-size: 1.5rem; text-transform: uppercase; line-height: 1; }
+.o-what { grid-column: 1; color: var(--ink-soft); font-size: 0.95rem; }
+.o-arrow { grid-row: 1 / span 2; grid-column: 2; align-self: center; font-family: var(--f-mono); color: var(--sea); }
+@media (max-width: 760px) { .home { grid-template-columns: minmax(0, 1fr); } }
+
+/* ---------- footer ---------- */
+.foot { background: var(--deep); color: var(--on-deep-soft); }
+.foot .wrap { padding-block: 56px 40px; display: grid; gap: 32px; }
+.foot h2 { color: var(--on-deep); font-size: 1.75rem; }
+.foot ol { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; font-size: 0.875rem; columns: 2; column-gap: 40px; }
+.foot ol li { break-inside: avoid; margin-bottom: 6px; }
+.foot a { color: var(--glow); }
+.foot .fine { font-family: var(--f-mono); font-size: 0.75rem; border-top: 1px solid color-mix(in srgb, var(--on-deep) 14%, transparent); padding-top: 20px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; }
+@media (max-width: 700px) { .foot ol { columns: 1; } }
+
+/* ---------- dieptemeter ---------- */
+.gauge {
+  position: fixed; z-index: 15; right: max(14px, env(safe-area-inset-right, 0px)); top: 50%; transform: translateY(-50%);
+  display: grid; gap: 8px; justify-items: end; font-family: var(--f-mono); font-size: 0.6875rem; color: var(--ink-soft);
+  pointer-events: none; mix-blend-mode: normal;
+}
+.gauge .track { width: 2px; height: 180px; background: var(--line); position: relative; }
+.gauge .fill { position: absolute; inset: 0 0 auto 0; background: var(--buoy); height: 0; }
+.gauge .read { color: var(--buoy); font-weight: 500; font-variant-numeric: tabular-nums; background: var(--paper); padding: 2px 4px; }
+.gauge .zone-name { writing-mode: vertical-rl; letter-spacing: 0.12em; text-transform: uppercase; background: var(--paper); padding: 4px 2px; }
+@media (max-width: 1320px) { .gauge { display: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .shark { animation: none; }
+}
+</style>
+</head>
+<body>
+
+<header class="site-head">
+  <div class="wrap">
+    <a class="logo" href="#top" aria-label="Getij, back to top">
+      <svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><circle cx="16" cy="16" r="14.5" stroke="currentColor" stroke-width="2"/><path d="M3 17c3.5-3 6.5-3 10 0s6.5 3 10 0 4.5-2.4 6-1.6" stroke="#7FE3E0" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M5 22.5c3-2.4 6-2.4 9 0s6 2.4 9 0 3.6-1.8 4.6-1.2" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" opacity=".6"/></svg>
+      GETIJ
+    </a>
+    <nav class="nav" aria-label="Main menu">
+      <a class="hide-sm" href="#threats">Threats</a>
+      <a class="hide-sm" href="#solutions">Solutions</a>
+      <a class="hide-sm" href="#north-sea">North Sea</a>
+      <a class="btn btn-solid" href="#take-action">Take action</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero" data-depth="0" data-zone="Sunlight zone">
+    <canvas id="sea" aria-hidden="true"></canvas>
+    <svg class="shark" viewBox="0 0 200 72" aria-hidden="true"><path fill="currentColor" d="M0 10 L24 36 L2 62 L32 46 C62 52 96 54 120 53 L128 68 L137 52 C162 50 184 46 200 40 C186 33 164 28 140 27 L128 2 L116 26 C82 27 54 30 32 34 Z"/></svg>
+    <div class="wrap">
+      <div class="eyebrow"><span class="depth">0 m</span><span>Surface</span><span>·</span><span>71% of the planet</span></div>
+      <h1>The ocean keeps us <em>alive.</em></h1>
+      <p class="lede">It produces much of the oxygen we breathe, absorbs heat and CO₂, and feeds billions of people. Getij explains what threatens it, what has been proven to work, and what you can do today.</p>
+      <div class="actions">
+        <a class="btn btn-solid" href="#threats">Dive in</a>
+        <a class="btn btn-ghost" href="#take-action">What can I do?</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="zone zone-1" id="numbers" data-depth="50" data-zone="Sunlight zone">
+    <div class="wrap">
+      <div class="section-head">
+        <div class="eyebrow"><span class="depth">50 m</span><span>Sunlight zone</span></div>
+        <h2>Why the ocean matters</h2>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="num">50<small>%</small></div><p>of the oxygen on Earth is estimated to come from the ocean, mostly from phytoplankton.</p></div>
+        <div class="stat"><div class="num">90<small>%</small></div><p>of the extra heat from climate change since 1970 has been absorbed by the ocean.</p></div>
+        <div class="stat"><div class="num">¼</div><p>of the CO₂ that people emit is taken up by seawater every year.</p></div>
+        <div class="stat"><div class="num">3<small>.3 bn</small></div><p>people get at least a fifth of their animal protein from fish and seafood.</p></div>
+      </div>
+      <div class="why">
+        <p>The ocean is the largest habitat on Earth and the least explored. It regulates our climate, provides food and jobs, and protects coastlines from storms. Coral reefs, seagrass meadows and mangroves break the waves and serve as nurseries for fish.</p>
+        <p>These systems are under pressure from what happens on land and at sea: too much fishing, too much plastic, too much CO₂. The good news is that the ocean often recovers surprisingly fast once we take the pressure off. That is what this site is about.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="zone zone-2" id="threats" data-depth="200" data-zone="Twilight zone">
+    <div class="wrap">
+      <div class="section-head">
+        <div class="eyebrow"><span class="depth">200 m</span><span>Twilight zone</span><span>·</span><span>Where sunlight fades</span></div>
+        <h2>Five threats</h2>
+      </div>
+      <div class="threats">
+        <article class="threat">
+          <div class="big">37.7%<span>of fish stocks are overfished</span></div>
+          <div><div class="kicker">Overfishing</div><h3>We catch fish faster than they can reproduce</h3></div>
+          <div class="body">
+            <p>In 1974 about 10% of monitored marine fish stocks were overfished; today it is more than a third. Large fleets, subsidised for fuel and vessels, fish far outside their own waters. Illegal and unreported fishing makes the problem worse.</p>
+            <p class="source">Source: FAO, The State of World Fisheries and Aquaculture 2024 (2021 data)</p>
+          </div>
+        </article>
+        <article class="threat">
+          <div class="big">11 Mt<span>of plastic enters the sea each year</span></div>
+          <div><div class="kicker">Plastic</div><h3>A garbage truck full every minute</h3></div>
+          <div class="body">
+            <p>An estimated 11 million tonnes of plastic end up in the ocean every year, and without action that will nearly triple by 2040. Animals get entangled or swallow it. Plastic breaks down into microplastics, which are now found from the sea surface to the deepest trenches.</p>
+            <p class="source">Source: The Pew Charitable Trusts &amp; SYSTEMIQ, Breaking the Plastic Wave (2020)</p>
+          </div>
+        </article>
+        <article class="threat">
+          <div class="big">+30%<span>more acidic since the Industrial Revolution</span></div>
+          <div><div class="kicker">Warming &amp; acidification</div><h3>Warmer, more acidic and lower in oxygen</h3></div>
+          <div class="body">
+            <p>Dissolved CO₂ forms carbonic acid. The pH of surface water has dropped from about 8.2 to 8.1. That sounds small, but the scale is logarithmic: the water is roughly 30% more acidic. Shellfish, corals and calcifying algae struggle to build their skeletons. Warmer water also holds less oxygen, and marine heatwaves are becoming more frequent.</p>
+            <p class="source">Source: IPCC, Special Report on the Ocean and Cryosphere (2019); NOAA</p>
+          </div>
+        </article>
+        <article class="threat">
+          <div class="big">84%<span>of reef area hit by bleaching-level heat</span></div>
+          <div><div class="kicker">Coral bleaching</div><h3>The largest bleaching event ever recorded</h3></div>
+          <div class="body">
+            <p>Reefs cover less than 1% of the seafloor, yet about a quarter of all marine species depend on them. When water gets too warm, corals expel the algae that feed them and give them colour. If the heat lasts too long, they die. The fourth global bleaching event has been under way since 2023; by early 2025, 84% of the world's reef area had been exposed to bleaching-level heat stress.</p>
+            <p class="source">Source: NOAA Coral Reef Watch &amp; International Coral Reef Initiative (April 2025)</p>
+          </div>
+        </article>
+        <article class="threat">
+          <div class="big">−71%<span>oceanic sharks and rays since 1970</span></div>
+          <div><div class="kicker">Bycatch &amp; sharks</div><h3>The catch nobody wanted</h3></div>
+          <div class="body">
+            <p>An estimated 100 million sharks are killed every year, for fins and meat and as bycatch. Sharks mature late and have few young, so populations recover slowly. More than a third of all shark and ray species are threatened with extinction. Sea turtles, albatrosses and dolphins also die in nets and on longlines. Only a handful of vaquitas, a porpoise from the Gulf of California, remain.</p>
+            <p class="source">Sources: Pacoureau et al., Nature (2021); Worm et al., Marine Policy (2013); Dulvy et al., Current Biology (2021)</p>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="band" data-depth="600" data-zone="Twilight zone">
+    <div class="wrap">
+      <div class="eyebrow" style="color:var(--on-deep-soft)"><span class="depth" style="color:var(--glow)">600 m</span><span>Twilight zone</span></div>
+      <blockquote>In fifty years, <b>71%</b> of open-ocean sharks and rays have disappeared.</blockquote>
+      <p class="source">Pacoureau et al., Half a century of global decline in oceanic sharks and rays, Nature 589 (2021)</p>
+    </div>
+  </section>
+
+  <section class="zone zone-2" id="solutions" data-depth="1000" data-zone="Midnight zone">
+    <div class="wrap">
+      <div class="section-head">
+        <div class="eyebrow"><span class="depth">1,000 m</span><span>Midnight zone</span><span>·</span><span>No more sunlight</span></div>
+        <h2>What has been proven to work</h2>
+      </div>
+      <div class="solutions">
+        <article class="sol feature">
+          <div class="tag">Protected areas · 30x30</div>
+          <h3>Leave the sea alone and it comes back</h3>
+          <p>In Cabo Pulmo, Mexico, local fishers chose to stop fishing in 1995. Ten years later the amount of fish had more than quintupled, and sharks and groupers had returned. Under the UN biodiversity agreement of 2022, 30% of the ocean should be protected by 2030. We are still far from that:</p>
+          <div class="meter" role="img" aria-label="About 8.4% of the ocean is a protected area, about 2.8% is fully or highly protected, and the target is 30% by 2030.">
+            <div class="meter-bar"><i class="m-all"></i><i class="m-strict"></i><span class="m-goal"></span></div>
+            <div class="meter-legend">
+              <span style="--c:var(--buoy)">≈2.8% fully or highly protected</span>
+              <span style="--c:var(--sea)">≈8.4% protected on paper</span>
+              <span style="--c:var(--ink)">target: 30% by 2030</span>
+            </div>
+          </div>
+          <p class="source">Sources: Aburto-Oropeza et al., PLoS ONE (2011); Protected Planet / MPAtlas (2025)</p>
+        </article>
+        <article class="sol">
+          <div class="tag">High seas</div>
+          <div class="fig">2/3</div>
+          <h3>A treaty for the open ocean</h3>
+          <p>Almost two thirds of the ocean lies outside any country's waters. The UN High Seas Treaty (BBNJ) makes it possible to create protected areas there. It was adopted in 2023 and entered into force on 17 January 2026.</p>
+        </article>
+        <article class="sol">
+          <div class="tag">Subsidies</div>
+          <h3>Stop paying for overfishing</h3>
+          <p>Governments spend tens of billions of dollars a year on fisheries subsidies, much of which makes fleets bigger. Since September 2025, a WTO agreement has banned subsidies for illegal fishing and for fishing overfished stocks.</p>
+        </article>
+        <article class="sol">
+          <div class="tag">Smarter fishing</div>
+          <h3>Less bycatch with simple changes</h3>
+          <p>Turtle excluder devices in shrimp nets, circle hooks instead of J-hooks, acoustic pingers to warn off porpoises, and bird-scaring lines on longlines. They cost little and cut bycatch substantially.</p>
+        </article>
+        <article class="sol">
+          <div class="tag">Plastic at the source</div>
+          <h3>Turn off the tap before you mop</h3>
+          <p>Clean-ups help locally, but the biggest gains come from less single-use plastic, deposit return schemes and better waste collection. Since 2022, countries have been negotiating a binding UN plastics treaty.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="zone zone-3" id="take-action" data-depth="3688" data-zone="Abyssal zone">
+    <div class="wrap">
+      <div class="section-head">
+        <div class="eyebrow"><span class="depth">3,688 m</span><span>Average depth of the ocean</span></div>
+        <h2>What you can do</h2>
+        <p style="max-width:60ch;color:var(--ink-soft)">Pick what suits you and tick it off when you start. Your choices are only saved in this browser.</p>
+      </div>
+      <div class="act-grid" id="pledges">
+        <div class="act"><input type="checkbox" id="p-vis"><label for="p-vis"><span class="row"><span class="t">Choose seafood wisely</span><span class="box"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3 3 7-7" stroke="currentColor" stroke-width="2.4"/></svg></span></span><p>Use a seafood guide, or eat less fish. Look for the MSC or ASC label.</p></label></div>
+        <div class="act"><input type="checkbox" id="p-plastic"><label for="p-plastic"><span class="row"><span class="t">Ditch single-use</span><span class="box"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3 3 7-7" stroke="currentColor" stroke-width="2.4"/></svg></span></span><p>Bring your own bottle, cup and bag. Return bottles and cans for their deposit.</p></label></div>
+        <div class="act"><input type="checkbox" id="p-strand"><label for="p-strand"><span class="row"><span class="t">Clean up a beach</span><span class="box"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3 3 7-7" stroke="currentColor" stroke-width="2.4"/></svg></span></span><p>Join a beach clean-up. What you find and count helps researchers trace where litter comes from.</p></label></div>
+        <div class="act"><input type="checkbox" id="p-co2"><label for="p-co2"><span class="row"><span class="t">Cut your CO₂</span><span class="box"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3 3 7-7" stroke="currentColor" stroke-width="2.4"/></svg></span></span><p>Fly less, eat less meat and switch to green energy. Less CO₂ in the air means less acidification at sea.</p></label></div>
+        <div class="act"><input type="checkbox" id="p-haai"><label for="p-haai"><span class="row"><span class="t">Keep shark off your plate</span><span class="box"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3 3 7-7" stroke="currentColor" stroke-width="2.4"/></svg></span></span><p>Shark is sold under other names, such as 'rock salmon' or 'huss' in the UK and 'zeepaling' in the Netherlands. Ask what you are buying and skip shark fin soup.</p></label></div>
+        <div class="act"><input type="checkbox" id="p-stem"><label for="p-stem"><span class="row"><span class="t">Speak up</span><span class="box"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8.5l3 3 7-7" stroke="currentColor" stroke-width="2.4"/></svg></span></span><p>Support an ocean organisation, sign petitions and ask politicians about their plans for the sea.</p></label></div>
+      </div>
+      <div class="pledge-bar">
+        <strong id="pledge-count">0 of 6 chosen</strong>
+        <p class="source">One person does not change the ocean. Millions of people using their choices and their voice do.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="zone zone-1" id="north-sea" data-depth="3688" data-zone="Home">
+    <div class="wrap home">
+      <div class="text">
+        <div class="eyebrow"><span class="depth">Back to the coast</span><span>North Sea &amp; Wadden Sea</span></div>
+        <h2 style="font-size:var(--step-3)">Ocean protection starts close to home</h2>
+        <p>The North Sea is one of the busiest and most heavily fished seas in the world. Even so, it is home to harbour porpoises, seals, rays and even sharks, such as the small-spotted catshark and the starry smooth-hound. The Wadden Sea is a UNESCO World Heritage Site and a refuelling stop for millions of migratory birds.</p>
+        <p>The egg cases of sharks and rays wash up on the beach, and you can report them. And where bottom-trawling has stopped, such as inside offshore wind farms, the seabed gets a chance to recover.</p>
+      </div>
+      <ul class="orgs">
+        <li><a href="https://www.noordzee.nl" target="_blank" rel="noopener"><span class="o-name">Stichting De Noordzee</span><span class="o-what">North Sea conservation, beach clean-ups and egg case recording.</span><span class="o-arrow">↗</span></a></li>
+        <li><a href="https://goodfish.nl" target="_blank" rel="noopener"><span class="o-name">Good Fish</span><span class="o-what">The VISwijzer seafood guide: which fish can you eat with a clear conscience?</span><span class="o-arrow">↗</span></a></li>
+        <li><a href="https://www.plasticsoupfoundation.org" target="_blank" rel="noopener"><span class="o-name">Plastic Soup Foundation</span><span class="o-what">Campaigns and research to stop plastic at the source.</span><span class="o-arrow">↗</span></a></li>
+        <li><a href="https://www.waddenvereniging.nl" target="_blank" rel="noopener"><span class="o-name">Waddenvereniging</span><span class="o-what">Protecting the Wadden Sea, with excursions and volunteering.</span><span class="o-arrow">↗</span></a></li>
+      </ul>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <h2>Sources</h2>
+    <ol>
+      <li>FAO (2024). <a href="https://www.fao.org/publications/home/fao-flagship-publications/the-state-of-world-fisheries-and-aquaculture" target="_blank" rel="noopener">The State of World Fisheries and Aquaculture 2024</a>.</li>
+      <li>IPCC (2019). Special Report on the Ocean and Cryosphere in a Changing Climate.</li>
+      <li>The Pew Charitable Trusts &amp; SYSTEMIQ (2020). Breaking the Plastic Wave.</li>
+      <li>NOAA Coral Reef Watch &amp; ICRI (2024–2025). Fourth global coral bleaching event.</li>
+      <li>Pacoureau, N. et al. (2021). Half a century of global decline in oceanic sharks and rays. Nature 589.</li>
+      <li>Worm, B. et al. (2013). Global catches, exploitation rates, and rebuilding options for sharks. Marine Policy 40.</li>
+      <li>Dulvy, N. et al. (2021). Overfishing drives over one-third of all sharks and rays toward a global extinction crisis. Current Biology 31.</li>
+      <li>Aburto-Oropeza, O. et al. (2011). Large recovery of fish biomass in a no-take marine reserve. PLoS ONE 6.</li>
+      <li>Protected Planet / Marine Protection Atlas (2025). Coverage of marine protected areas.</li>
+      <li>United Nations (2023). Agreement on Marine Biological Diversity of Areas beyond National Jurisdiction (BBNJ).</li>
+    </ol>
+    <div class="fine">
+      <span>Getij · an information site about ocean conservation</span>
+      <span>Figures are rounded estimates from the sources listed Â· last updated October 2026</span>
+    </div>
+  </div>
+</footer>
+
+<div class="gauge" aria-hidden="true">
+  <span class="read" id="g-read">0 m</span>
+  <span class="track"><span class="fill" id="g-fill"></span></span>
+  <span class="zone-name" id="g-zone">Sunlight zone</span>
+</div>
+
+<script>
+(function () {
+  // Hero: lichtbundels en drijvende 'zeesneeuw'
+  var c = document.getElementById('sea');
+  var ctx = c.getContext('2d');
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var w = 0, h = 0, dpr = 1, flakes = [];
+  function size() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    w = c.clientWidth; h = c.clientHeight;
+    c.width = w * dpr; c.height = h * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    var n = Math.round(Math.min(140, w * h / 9000));
+    flakes = [];
+    for (var i = 0; i < n; i++) flakes.push({ x: Math.random() * w, y: Math.random() * h, r: Math.random() * 1.6 + 0.4, s: Math.random() * 0.25 + 0.05, d: Math.random() * Math.PI * 2 });
+  }
+  function draw(t) {
+    ctx.clearRect(0, 0, w, h);
+    ctx.globalCompositeOperation = 'lighter';
+    for (var i = 0; i < 7; i++) {
+      var x = w * (0.1 + i * 0.14) + Math.sin(t / 4200 + i * 1.7) * 60;
+      var spread = 70 + 40 * Math.sin(t / 5300 + i);
+      var g = ctx.createLinearGradient(0, 0, 0, h);
+      g.addColorStop(0, 'rgba(127,227,224,0.10)');
+      g.addColorStop(1, 'rgba(127,227,224,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.moveTo(x - 18, 0); ctx.lineTo(x + 18, 0);
+      ctx.lineTo(x + spread + 120, h); ctx.lineTo(x - spread + 40, h);
+      ctx.closePath(); ctx.fill();
+    }
+    ctx.globalCompositeOperation = 'source-over';
+    for (var j = 0; j < flakes.length; j++) {
+      var f = flakes[j];
+      if (!reduce) { f.y += f.s; f.x += Math.sin(t / 3000 + f.d) * 0.12; if (f.y > h + 4) { f.y = -4; f.x = Math.random() * w; } }
+      ctx.fillStyle = 'rgba(232,241,240,' + (0.15 + f.r * 0.18) + ')';
+      ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2); ctx.fill();
+    }
+    if (!reduce) requestAnimationFrame(draw);
+  }
+  size();
+  window.addEventListener('resize', function () { size(); if (reduce) draw(0); });
+  requestAnimationFrame(draw);
+
+  // Dieptemeter
+  var sections = [].slice.call(document.querySelectorAll('[data-depth]'));
+  var read = document.getElementById('g-read'), fill = document.getElementById('g-fill'), zone = document.getElementById('g-zone');
+  function fmt(n) { return Math.round(n).toLocaleString('en-GB') + ' m'; }
+  function onScroll() {
+    var mid = window.innerHeight * 0.5, depth = 0, name = 'Sunlight zone';
+    for (var i = 0; i < sections.length; i++) {
+      var r = sections[i].getBoundingClientRect();
+      if (r.top <= mid) {
+        var d0 = +sections[i].dataset.depth;
+        var next = sections[i + 1] ? +sections[i + 1].dataset.depth : d0;
+        var p = Math.min(1, Math.max(0, (mid - r.top) / r.height));
+        depth = d0 + (next - d0) * p; name = sections[i].dataset.zone;
+      }
+    }
+    read.textContent = fmt(depth);
+    fill.style.height = Math.min(100, depth / 3688 * 100) + '%';
+    zone.textContent = name;
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+
+  // Belofte-checklist (alleen in deze browser)
+  var boxes = [].slice.call(document.querySelectorAll('#pledges input'));
+  var count = document.getElementById('pledge-count');
+  var saved = {};
+  try { saved = JSON.parse(localStorage.getItem('getij-pledges') || '{}'); } catch (e) { saved = {}; }
+  function update() {
+    var n = boxes.filter(function (b) { return b.checked; }).length;
+    count.textContent = n === boxes.length ? 'All 6 chosen. Thank you!' : n + ' of 6 chosen';
+  }
+  boxes.forEach(function (b) {
+    if (saved[b.id]) b.checked = true;
+    b.addEventListener('change', function () {
+      saved[b.id] = b.checked;
+      try { localStorage.setItem('getij-pledges', JSON.stringify(saved)); } catch (e) {}
+      update();
+    });
+  });
+  update();
+})();
+</script>
+</body>
+</html>
