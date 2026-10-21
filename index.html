@@ -272,6 +272,16 @@ a:focus-visible, button:focus-visible, input:focus-visible + label, label:focus-
 .gauge .zone-name { writing-mode: vertical-rl; letter-spacing: 0.12em; text-transform: uppercase; background: var(--paper); padding: 4px 2px; }
 @media (max-width: 1320px) { .gauge { display: none; } }
 
+/* ---------- cijfers die in beeld scrollen ---------- */
+.count-target { transition: transform .9s cubic-bezier(.2, .7, .2, 1); }
+b.count-target, span.count-target { display: inline-block; }
+.count-target.waiting { transform: translateY(14px); }
+.count-target.pop { transform-origin: left bottom; }
+.count-target.pop.waiting { transform: scale(.6); }
+.meter-bar i { transition: width 1.4s cubic-bezier(.2, .7, .2, 1); }
+.meter-bar .m-strict { transition-delay: .3s; }
+.meter.waiting .meter-bar i { width: 0; }
+
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   .shark { animation: none; }
@@ -586,6 +596,44 @@ a:focus-visible, button:focus-visible, input:focus-visible + label, label:focus-
     });
   });
   update();
+
+  // Cijfers tellen op zodra ze in beeld scrollen; zonder script staan de eindwaarden er gewoon
+  var targets = [].slice.call(document.querySelectorAll('.stat .num, .threat .big, .band b, .sol .fig, .section-head .depth, .band .depth'));
+  var meter = document.querySelector('.meter');
+  function fmtNum(v, dec) { return v.toLocaleString('en-GB', { minimumFractionDigits: dec, maximumFractionDigits: dec }); }
+  if (!reduce && 'IntersectionObserver' in window) {
+    var jobs = new Map();
+    targets.forEach(function (el) {
+      var node = el.firstChild;
+      var m = node && node.nodeType === 3 ? node.nodeValue.match(/^(\D*)(\d[\d,]*)(\.\d+)?(.*)$/) : null;
+      if (!m || el.textContent.indexOf('/') > -1) { el.classList.add('count-target', 'pop', 'waiting'); jobs.set(el, null); return; }
+      var job = { node: node, text: node.nodeValue, pre: m[1], post: m[4], dec: m[3] ? m[3].length - 1 : 0,
+                  end: parseFloat((m[2] + (m[3] || '')).replace(/,/g, '')) };
+      el.classList.add('count-target', 'waiting');
+      node.nodeValue = job.pre + fmtNum(0, job.dec) + job.post;
+      jobs.set(el, job);
+    });
+    function run(el) {
+      var job = jobs.get(el);
+      el.classList.remove('waiting');
+      if (!job) return;
+      var t0 = performance.now(), dur = 1400;
+      (function step(now) {
+        var p = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+        job.node.nodeValue = p < 1 ? job.pre + fmtNum(job.end * e, job.dec) + job.post : job.text;
+        if (p < 1) requestAnimationFrame(step);
+      })(t0);
+    }
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        io.unobserve(en.target);
+        if (en.target === meter) meter.classList.remove('waiting'); else run(en.target);
+      });
+    }, { threshold: 0.4 });
+    jobs.forEach(function (_, el) { io.observe(el); });
+    if (meter) { meter.classList.add('waiting'); io.observe(meter); }
+  }
 })();
 </script>
 </body>
