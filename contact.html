@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Getij Contact</title>
+<meta name="description" content="Get in touch with Getij: questions, photos to share or ideas for ocean conservation.">
+<meta name="theme-color" content="#061922">
+<meta property="og:title" content="Getij Contact">
+<meta property="og:description" content="Questions, photos to share or ideas? Send us a message.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%23061922'/%3E%3Cpath d='M4 17c3.5-3 6.5-3 10 0s6.5 3 10 0 3.5-2.2 4.5-1.6' stroke='%237FE3E0' stroke-width='2.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="fonts.css">
+<style>
+/* Layout: een rustig formulier aan de oppervlakte; links de uitnodiging, rechts het formulier
+   als een logboekformulier met mono-labels. */
+:root {
+  --paper: #EEF4F3; --paper-2: #E2ECEB; --ink: #0B1F2A; --ink-soft: #3C5562; --line: #B9CDCF;
+  --buoy: #D94F04; --sea: #0D6874; --card: #F7FAFA; --ok: #0D6E4F; --err: #B42318;
+  --deep: #061922; --deep-2: #0B2C38; --on-deep: #E8F1F0; --on-deep-soft: #9DB9BE; --glow: #7FE3E0;
+  --f-display: "Big Shoulders Display", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  --f-body: "Instrument Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --step-0: 1.0625rem; --step-4: clamp(3rem, 1.6rem + 6.4vw, 7.25rem);
+  --wrap: 1180px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0A1C25; --paper-2: #07161E; --ink: #E4EEEE; --ink-soft: #A3BABF; --line: #1F3C48;
+    --buoy: #FF7A33; --sea: #6FD0D2; --card: #0F2631; --ok: #5FD3A6; --err: #FF8A80;
+    --deep: #03111A; --deep-2: #082430;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0A1C25; --paper-2: #07161E; --ink: #E4EEEE; --ink-soft: #A3BABF; --line: #1F3C48;
+  --buoy: #FF7A33; --sea: #6FD0D2; --card: #0F2631; --ok: #5FD3A6; --err: #FF8A80;
+  --deep: #03111A; --deep-2: #082430;
+  color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: border-box; }
+:root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--f-body); font-size: var(--step-0); line-height: 1.6; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--deep); }
+[hidden] { display: none !important; }
+h1, h2 { font-family: var(--f-display); font-weight: 800; text-transform: uppercase; line-height: 0.95; margin: 0; text-wrap: balance; }
+p { margin: 0; }
+a { color: var(--sea); text-underline-offset: 3px; }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--buoy); outline-offset: 3px; }
+.wrap { max-width: var(--wrap); margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.eyebrow { font-family: var(--f-mono); font-size: 0.8125rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-soft); display: flex; gap: 12px; flex-wrap: wrap; }
+
+.site-head { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--deep); color: var(--on-deep); border-bottom: 1px solid color-mix(in srgb, var(--on-deep) 12%, transparent); }
+.site-head .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 14px; }
+.logo { display: flex; align-items: center; gap: 10px; color: var(--on-deep); text-decoration: none; font-family: var(--f-display); font-weight: 900; font-size: 1.6rem; letter-spacing: 0.08em; }
+.logo svg { width: 30px; height: 30px; flex: none; }
+.nav { display: flex; gap: clamp(14px, 2.4vw, 32px); align-items: center; }
+.nav a { color: var(--on-deep); text-decoration: none; font-size: 0.875rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; }
+.nav a:hover, .nav a[aria-current="page"] { color: var(--glow); }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; font-family: var(--f-body); font-weight: 600; font-size: 0.875rem; letter-spacing: 0.08em; text-transform: uppercase; padding: 12px 20px; border: 2px solid currentColor; text-decoration: none; cursor: pointer; background: transparent; color: inherit; transition: background .2s, color .2s; }
+.btn-solid { background: var(--buoy); border-color: var(--buoy); color: #fff; }
+.btn-solid:hover { background: transparent; color: var(--buoy); }
+.site-head .btn { padding: 9px 14px; }
+@media (max-width: 760px) { .nav .hide-sm { display: none; } }
+@media (max-width: 420px) { .nav { gap: 12px; } .site-head .btn { padding: 8px 10px; font-size: 0.75rem; } .logo { font-size: 1.35rem; } }
+
+.intro { background: linear-gradient(180deg, var(--deep-2), var(--deep)); color: var(--on-deep); }
+.intro .wrap { padding-block: clamp(64px, 9vw, 120px) clamp(48px, 6vw, 80px); display: grid; gap: 20px; }
+.intro .eyebrow { color: var(--on-deep-soft); }
+.intro h1 { font-size: var(--step-4); font-weight: 900; max-width: 12ch; }
+.intro h1 em { font-style: normal; color: var(--glow); }
+.intro p { max-width: 56ch; color: var(--on-deep-soft); font-size: 1.25rem; line-height: 1.5; }
+
+.contact { padding-block: clamp(48px, 7vw, 96px); }
+.contact .wrap { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.3fr); gap: clamp(28px, 6vw, 88px); align-items: start; }
+.reasons { display: grid; gap: 0; border-top: 2px solid var(--ink); }
+.reasons div { padding: 18px 0; border-bottom: 1px solid var(--line); display: grid; gap: 4px; }
+.reasons b { font-family: var(--f-display); font-weight: 800; font-size: 1.6rem; text-transform: uppercase; line-height: 1; }
+.reasons span { color: var(--ink-soft); font-size: 0.975rem; }
+.reasons-note { margin-top: 18px; font-size: 0.875rem; color: var(--ink-soft); }
+
+form { display: grid; gap: 20px; background: var(--card); border: 2px solid var(--ink); padding: clamp(20px, 3vw, 36px); }
+.field { display: grid; gap: 6px; }
+.field label { font-family: var(--f-mono); font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); }
+.field label .opt { text-transform: none; letter-spacing: 0; }
+.field input, .field select, .field textarea {
+  font: inherit; color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-bottom: 2px solid var(--ink);
+  padding: 12px 14px; width: 100%; border-radius: 0;
+}
+.field textarea { min-height: 160px; resize: vertical; }
+.field input:focus, .field select:focus, .field textarea:focus { outline: none; border-bottom-color: var(--buoy); background: var(--card); }
+.field .err { font-size: 0.8125rem; color: var(--err); min-height: 0; }
+.row2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+@media (max-width: 560px) { .row2 { grid-template-columns: minmax(0, 1fr); } }
+.hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+.consent { display: flex; gap: 10px; align-items: flex-start; font-size: 0.875rem; color: var(--ink-soft); }
+.consent input { margin-top: 4px; width: 18px; height: 18px; accent-color: var(--buoy); flex: none; }
+.actions { display: flex; flex-wrap: wrap; gap: 14px 20px; align-items: center; justify-content: space-between; }
+.actions .btn[disabled] { opacity: .6; cursor: progress; }
+.status { font-size: 0.9375rem; }
+.status.ok { color: var(--ok); }
+.status.err { color: var(--err); }
+.sent { display: grid; gap: 14px; background: var(--card); border: 2px solid var(--ink); padding: clamp(24px, 3vw, 40px); }
+.sent h2 { font-size: clamp(2.2rem, 1.6rem + 2vw, 3.2rem); }
+@media (max-width: 860px) { .contact .wrap { grid-template-columns: minmax(0, 1fr); } }
+
+.foot { background: var(--deep); color: var(--on-deep-soft); }
+.foot .wrap { padding-block: 40px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; font-family: var(--f-mono); font-size: 0.75rem; }
+.foot a { color: var(--glow); }
+</style>
+</head>
+<body>
+
+<header class="site-head">
+  <div class="wrap">
+    <a class="logo" href="index.html" aria-label="Getij, home">
+      <svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><circle cx="16" cy="16" r="14.5" stroke="currentColor" stroke-width="2"/><path d="M3 17c3.5-3 6.5-3 10 0s6.5 3 10 0 4.5-2.4 6-1.6" stroke="#7FE3E0" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M5 22.5c3-2.4 6-2.4 9 0s6 2.4 9 0 3.6-1.8 4.6-1.2" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round" opacity=".6"/></svg>
+      GETIJ
+    </a>
+    <nav class="nav" aria-label="Main menu">
+      <a class="hide-sm" href="index.html#threats">Threats</a>
+      <a class="hide-sm" href="index.html#solutions">Solutions</a>
+      <a href="gallery.html">Gallery</a>
+      <a class="hide-sm" href="contact.html" aria-current="page">Contact</a>
+      <a class="btn btn-solid" href="index.html#take-action">Take action</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="intro">
+    <div class="wrap">
+      <div class="eyebrow"><span>Contact</span><span>·</span><span>Usually a reply within a few days</span></div>
+      <h1>Send a message <em>to the surface</em></h1>
+      <p>A question about the ocean, an underwater photo you'd like to share, or an idea for Getij? Fill in the form and your message goes straight to our inbox.</p>
+    </div>
+  </section>
+
+  <section class="contact">
+    <div class="wrap">
+      <div>
+        <div class="reasons">
+          <div><b>Questions</b><span>About a figure, a source or something you read on this site.</span></div>
+          <div><b>Photos</b><span>Have an underwater photo for the gallery? Tell us about it and we'll get back to you.</span></div>
+          <div><b>Ideas &amp; corrections</b><span>Spotted an error or outdated number? We'd like to know.</span></div>
+        </div>
+        <p class="reasons-note">Your message is delivered by email through Formspree. We only use your details to reply to you.</p>
+      </div>
+
+      <div>
+        <form id="contact-form" novalidate>
+          <div class="row2">
+            <div class="field">
+              <label for="c-name">Name</label>
+              <input id="c-name" name="name" type="text" autocomplete="name" required maxlength="100">
+              <span class="err" id="c-name-err"></span>
+            </div>
+            <div class="field">
+              <label for="c-email">Email</label>
+              <input id="c-email" name="email" type="email" autocomplete="email" required maxlength="200">
+              <span class="err" id="c-email-err"></span>
+            </div>
+          </div>
+          <div class="field">
+            <label for="c-topic">Topic</label>
+            <select id="c-topic" name="topic">
+              <option>Question</option>
+              <option>Photo for the gallery</option>
+              <option>Idea or correction</option>
+              <option>Something else</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="c-message">Message</label>
+            <textarea id="c-message" name="message" required maxlength="5000"></textarea>
+            <span class="err" id="c-message-err"></span>
+          </div>
+          <div class="hp" aria-hidden="true"><label for="c-gotcha">Leave this empty</label><input id="c-gotcha" name="_gotcha" type="text" tabindex="-1" autocomplete="off"></div>
+          <label class="consent" for="c-consent"><input id="c-consent" type="checkbox" required><span>I agree that Getij uses my name and email address to reply to this message.</span></label>
+          <span class="err" id="c-consent-err" style="font-size:0.8125rem;color:var(--err)"></span>
+          <div class="actions">
+            <button class="btn btn-solid" type="submit" id="c-send">Send message</button>
+            <span class="status" id="c-status" role="status" aria-live="polite"></span>
+          </div>
+        </form>
+
+        <div class="sent" id="c-sent" hidden tabindex="-1">
+          <h2>Message sent</h2>
+          <p>Thank you! Your message is on its way. We'll reply to the email address you gave.</p>
+          <p><a href="index.html">Back to the main page</a></p>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <span>Getij · an information site about ocean conservation</span>
+    <a href="index.html">Back to the main page</a>
+  </div>
+</footer>
+
+<script>
+(function () {
+  // Formulier-ID van Formspree (https://formspree.io/f/<ID>). Leeg = nog niet gekoppeld.
+  var FORMSPREE_ID = '';
+
+  var form = document.getElementById('contact-form');
+  var status = document.getElementById('c-status');
+  var send = document.getElementById('c-send');
+  var fields = [
+    { el: document.getElementById('c-name'), err: document.getElementById('c-name-err'), msg: 'Enter your name.' },
+    { el: document.getElementById('c-email'), err: document.getElementById('c-email-err'), msg: 'Enter a valid email address, like name@example.com.' },
+    { el: document.getElementById('c-message'), err: document.getElementById('c-message-err'), msg: 'Write a message first.' },
+    { el: document.getElementById('c-consent'), err: document.getElementById('c-consent-err'), msg: 'Tick the box so we can reply to you.' }
+  ];
+  fields.forEach(function (f) {
+    f.el.addEventListener('input', function () { f.err.textContent = ''; });
+    f.el.addEventListener('change', function () { f.err.textContent = ''; });
+  });
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    status.textContent = ''; status.className = 'status';
+    var first = null;
+    fields.forEach(function (f) {
+      var ok = f.el.type === 'checkbox' ? f.el.checked : f.el.value.trim() !== '' && f.el.checkValidity();
+      f.err.textContent = ok ? '' : f.msg;
+      if (!ok && !first) first = f.el;
+    });
+    if (first) { first.focus(); return; }
+
+    if (!FORMSPREE_ID) {
+      status.textContent = 'The form is not connected yet, so nothing was sent.';
+      status.className = 'status err';
+      return;
+    }
+
+    send.disabled = true; send.textContent = 'Sending…';
+    fetch('https://formspree.io/f/' + FORMSPREE_ID, {
+      method: 'POST',
+      headers: { 'Accept': 'application/json' },
+      body: new FormData(form)
+    }).then(function (res) {
+      if (!res.ok) throw new Error('status ' + res.status);
+      form.hidden = true;
+      var sent = document.getElementById('c-sent');
+      sent.hidden = false; sent.focus();
+    }).catch(function () {
+      status.textContent = 'Sending failed. Check your internet connection and try again.';
+      status.className = 'status err';
+    }).then(function () {
+      send.disabled = false; send.textContent = 'Send message';
+    });
+  });
+})();
+</script>
+</body>
+</html>
