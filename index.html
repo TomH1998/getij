@@ -547,6 +547,8 @@ b.count-target, span.count-target { display: inline-block; }
     for (var i = 0; i < n; i++) flakes.push({ x: Math.random() * w, y: Math.random() * h, r: Math.random() * 1.6 + 0.4, s: Math.random() * 0.25 + 0.05, d: Math.random() * Math.PI * 2 });
   }
   function draw(t) {
+    // draait het echte (WebGL-)water, dan is deze getekende versie niet nodig
+    if (document.documentElement.classList.contains('real-water')) { c.style.display = 'none'; return; }
     ctx.clearRect(0, 0, w, h);
     ctx.globalCompositeOperation = 'lighter';
     for (var i = 0; i < 7; i++) {

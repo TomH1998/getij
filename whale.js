@@ -1,5 +1,5 @@
-// Getij: een 3D-walvishaai die meezwemt tijdens het scrollen, en water dat donkerder wordt met de diepte.
-// De haai is volledig in code opgebouwd (geen extern 3D-model). Zonder WebGL blijft alleen het waterkleurverloop over.
+// Getij: een 3D-orka die meezwemt tijdens het scrollen, in water dat per pixel wordt berekend en donkerder wordt met de diepte.
+// Lukt het laden van het orka-model niet, dan zwemt de in code gebouwde walvishaai. Zonder WebGL blijft alleen het kleurverloop over.
 (function () {
   var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var water = document.querySelector('.water');
@@ -92,6 +92,72 @@
   var rim = new T.DirectionalLight(0x7fe3e0, 0.0);
   rim.position.set(-4, -2, -6);
   scene.add(rim);
+
+  // ---------- het water zelf: per pixel berekend in plaats van een egale kleur ----------
+  // Lichtbundels die door het water wiegen, het golvende oppervlak van onderen gezien met
+  // dansende lichtvlekken (caustics), licht dat met de diepte verdwijnt, vignet en filmkorrel.
+  var waterMat = new T.ShaderMaterial({
+    depthTest: false,
+    depthWrite: false,
+    uniforms: {
+      uTime: { value: 0 },
+      uPage: { value: 0 },
+      uAspect: { value: 1 },
+      uWater: { value: new T.Vector3(17 / 255, 102 / 255, 123 / 255) }
+    },
+    vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }',
+    fragmentShader: [
+      'precision highp float;',
+      'uniform float uTime, uPage, uAspect; uniform vec3 uWater; varying vec2 vUv;',
+      'float hash(vec2 p){ vec3 p3 = fract(vec3(p.xyx) * 0.1031); p3 += dot(p3, p3.yzx + 33.33); return fract((p3.x + p3.y) * p3.z); }',
+      'float noise(vec2 p){ vec2 i = floor(p), f = fract(p); vec2 u = f * f * (3.0 - 2.0 * f);',
+      '  return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x), u.y); }',
+      // elke laag gedraaid, zodat er nergens een raster zichtbaar wordt
+      'const mat2 ROT = mat2(1.6, 1.2, -1.2, 1.6);',
+      'float fbm(vec2 p){ float v = 0.0, a = 0.5; for (int i = 0; i < 4; i++){ v += a * noise(p); p = ROT * p + vec2(1.7, 9.2); a *= 0.5; } return v; }',
+      // caustics: dunne heldere lijnen waar golven het licht bundelen
+      'float caustic(vec2 p, float t){ float c = 0.0;',
+      '  for (int i = 0; i < 2; i++){ float fi = float(i);',
+      '    vec2 q = p * (1.0 + fi * 0.7) + vec2(sin(t * 0.21 + fi * 1.3), cos(t * 0.17 + fi * 2.1)) * 1.4;',
+      '    float n = fbm(q + t * 0.06 * (fi + 1.0));',
+      '    c += pow(1.0 - abs(n * 2.0 - 1.0), 7.0); }',
+      '  return c * 0.5; }',
+      'void main(){',
+      '  vec2 uv = vUv; vec2 p = vec2((uv.x - 0.5) * uAspect, uv.y); float t = uTime;',
+      // licht van boven: het water is helder bij het oppervlak en wordt naar onderen donker
+      '  float lift = smoothstep(-0.15, 1.15, uv.y);',
+      '  vec3 col = mix(uWater * 0.36, uWater * 1.5 + vec3(0.015, 0.05, 0.05), pow(lift, 1.35));',
+      '  float sun = 1.0 - smoothstep(0.0, 0.55, uPage);',
+      // lichtbundels, schuin vanaf het oppervlak, langzaam wiegend
+      '  float rx = p.x + (1.0 - uv.y) * 0.38;',
+      '  float r1 = noise(vec2(rx * 3.2 + sin(t * 0.05) * 0.6, t * 0.06));',
+      '  float r2 = noise(vec2(rx * 7.5 - t * 0.02, t * 0.09 + 4.0));',
+      '  float rays = smoothstep(0.42, 1.0, r1 * 0.65 + r2 * 0.45);',
+      '  rays *= pow(uv.y, 1.7) * (0.55 + 0.45 * fbm(vec2(rx * 2.0, uv.y * 3.0 - t * 0.05)));',
+      '  col += vec3(0.55, 0.86, 0.86) * rays * (0.10 + 0.30 * sun);',
+      // het oppervlak van onderen gezien; schuift omhoog weg zodra je naar beneden scrolt
+      '  float sy = uv.y - (0.84 + uPage * 7.0);',
+      '  float surf = smoothstep(-0.2, 0.08, sy);',
+      '  float c = caustic(vec2(p.x * 2.4, uv.y * 3.0), t);',
+      '  float ripple = fbm(vec2(p.x * 6.0 + t * 0.12, uv.y * 26.0 - t * 0.35));',
+      '  col += vec3(0.58, 0.80, 0.84) * surf * (0.06 + 0.42 * c + 0.12 * ripple);',
+      // zachte lichtvlekken die door het bovenste water spelen
+      '  float cz = caustic(p * 2.2 + vec2(0.0, uPage * 4.0), t * 0.7);',
+      '  col += vec3(0.45, 0.76, 0.76) * cz * 0.09 * sun * smoothstep(0.15, 1.0, uv.y);',
+      // vignet en korrel: geen vlakke kleur, geen banding
+      '  float v = smoothstep(1.3, 0.3, length((uv - vec2(0.5, 0.58)) * vec2(uAspect * 0.55, 1.0)));',
+      '  col *= mix(0.7, 1.0, v);',
+      '  col += (hash(uv * vec2(1733.0, 977.0) + fract(t * 0.37)) - 0.5) * 0.022;',
+      '  col = col / (1.0 + max(col - 0.6, 0.0) * 1.4);', // zachte bovengrens: licht brandt niet uit
+      '  gl_FragColor = vec4(col, 1.0);',
+      '}'
+    ].join('\n')
+  });
+  var waterQuad = new T.Mesh(new T.PlaneGeometry(2, 2), waterMat);
+  waterQuad.frustumCulled = false;
+  waterQuad.renderOrder = -10;
+  scene.add(waterQuad);
+  document.documentElement.classList.add('real-water');
 
   // ---------- het lijf: ringen langs de lengte-as, neus op +z ----------
   var L = 5.2, RINGS = 64, SEG = 36;
@@ -258,7 +324,12 @@
   }
   var flakeGeo = new T.BufferGeometry();
   flakeGeo.setAttribute('position', new T.BufferAttribute(flakePos, 3));
-  var flakes = new T.Points(flakeGeo, new T.PointsMaterial({ color: 0xe8f1f0, size: 0.035, transparent: true, opacity: 0.55, depthWrite: false }));
+  // zachte, ronde deeltjes; dichtbij groot en wazig, ver weg klein (perspectief)
+  var dot = document.createElement('canvas'); dot.width = dot.height = 64;
+  var dctx = dot.getContext('2d'), grad = dctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+  grad.addColorStop(0, 'rgba(255,255,255,1)'); grad.addColorStop(0.35, 'rgba(255,255,255,0.55)'); grad.addColorStop(1, 'rgba(255,255,255,0)');
+  dctx.fillStyle = grad; dctx.fillRect(0, 0, 64, 64);
+  var flakes = new T.Points(flakeGeo, new T.PointsMaterial({ color: 0xdcecea, size: 0.07, map: new T.CanvasTexture(dot), transparent: true, opacity: 0.5, depthWrite: false, sizeAttenuation: true }));
   scene.add(flakes);
 
   // ---------- zwembeweging ----------
@@ -321,6 +392,18 @@
   }
   function glide(obj, prop, t, key, maxV, dt) { obj[prop] = glideVal(obj[prop], t, key, maxV, dt); }
   var fogCol = new T.Color();
+  var animalFade = 1, fadeMats = null, fadeShown = -1;
+  function setAnimalOpacity(a) {
+    if (Math.abs(a - fadeShown) < 0.004) return;
+    fadeShown = a;
+    fadeMats = [];
+    swim.traverse(function (o) { if (o.material) fadeMats.push(o.material); });
+    for (var i = 0; i < fadeMats.length; i++) {
+      var m = fadeMats[i], tr = a < 0.999;
+      if (m.transparent !== tr) { m.transparent = tr; m.needsUpdate = true; }
+      m.opacity = a;
+    }
+  }
   function frame(now) {
     var dt = Math.min(0.05, (now - last) / 1000); last = now;
     var st = scrollState();
@@ -391,13 +474,22 @@
       var fp = flakeGeo.attributes.position.array;
       for (var f = 0; f < N; f++) {
         fp[f * 3 + 1] -= dt * 0.12;
+        fp[f * 3] += Math.sin(now / 2400 + f) * dt * 0.03; // zachte stroming
         if (fp[f * 3 + 1] < -6) fp[f * 3 + 1] = 6;
       }
       flakeGeo.attributes.position.needsUpdate = true;
     }
 
+    // het water blijft altijd volledig zichtbaar; alleen het dier wordt op smalle schermen zachter
+    waterMat.uniforms.uTime.value = reduce ? 4 : now / 1000;
+    waterMat.uniforms.uPage.value = st.page;
+    waterMat.uniforms.uAspect.value = camera.aspect;
+    waterMat.uniforms.uWater.value.set(c[0] / 255, c[1] / 255, c[2] / 255);
     var hide = reduce ? st.pastHero : false;
-    canvas.style.opacity = hide ? '0' : (narrow ? (st.pastHero ? '0.32' : '0.75') : '1');
+    swim.visible = !hide;
+    var fadeT = narrow ? (st.pastHero ? 0.32 : 0.75) : 1;
+    animalFade += (fadeT - animalFade) * (reduce ? 1 : Math.min(1, dt * 2));
+    setAnimalOpacity(animalFade);
     renderer.render(scene, camera);
     if (!reduce) requestAnimationFrame(frame);
   }
