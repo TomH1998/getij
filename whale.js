@@ -312,20 +312,37 @@
 
   var cur = null, phase = 0, yOff = 0, last = performance.now();
   var PROFILE = Math.PI / 2 - 0.28, heading = -1, yaw = -PROFILE, yawVel = 0, pending = 0, bank = 0, pitch = 0;
+  var vel = null, started = false;
+  // gedempte veer met maximale snelheid (eenheden per seconde): zacht optrekken, kruissnelheid, zacht afremmen
+  function glideVal(v, t, key, maxV, dt) {
+    var a = (t - v) * 2.2 - vel[key] * 2.9;
+    vel[key] = Math.max(-maxV, Math.min(maxV, vel[key] + a * dt));
+    return v + vel[key] * dt;
+  }
+  function glide(obj, prop, t, key, maxV, dt) { obj[prop] = glideVal(obj[prop], t, key, maxV, dt); }
   var fogCol = new T.Color();
   function frame(now) {
     var dt = Math.min(0.05, (now - last) / 1000); last = now;
     var st = scrollState();
     var target = reduce ? POSES[0] : st.pose;
     var prevX = cur ? cur.x : target.x, prevY = cur ? cur.y + yOff : target.y;
-    if (!cur || reduce) cur = { x: target.x, y: target.y, s: target.s };
-    else for (var k in cur) cur[k] += (target[k] - cur[k]) * Math.min(1, dt * 1.6);
+    var drop = narrow && !st.pastHero ? -0.66 : 0;
+    if (!cur || reduce) {
+      cur = { x: target.x, y: target.y, s: target.s };
+      vel = { x: 0, y: 0, s: 0, o: 0 };
+      if (reduce || !started) yOff = drop;
+      started = true;
+    } else {
+      // zwemmen met een eigen topsnelheid: hoe hard je ook scrolt, hij zakt of schiet nooit ineens weg
+      glide(cur, 'x', target.x, 'x', 0.32, dt);
+      glide(cur, 'y', target.y, 'y', 0.14, dt);
+      glide(cur, 's', target.s, 's', 0.18, dt);
+      yOff = glideVal(yOff, drop, 'o', 0.16, dt);
+    }
 
     var halfH = Math.tan((camera.fov / 2) * Math.PI / 180) * camera.position.z, halfW = halfH * camera.aspect;
     var xf = narrow ? 0.45 : 1;
     // op smalle schermen zwemt het dier in de opening onder de tekst, daarna op de achtergrond
-    var drop = narrow && !st.pastHero ? -0.66 : 0;
-    yOff += (drop - yOff) * (reduce ? 1 : Math.min(1, dt * 2.4));
     holder.position.set(cur.x * halfW * xf, (cur.y + yOff) * halfH + (reduce ? 0 : Math.sin(now / 1700) * 0.08), 0);
     holder.scale.setScalar(cur.s * (narrow ? Math.min(1, camera.aspect * 0.9 + 0.25) : 1));
 
