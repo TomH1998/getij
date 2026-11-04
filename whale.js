@@ -372,25 +372,77 @@
   // ---------- formaat ----------
   var narrow = false;
   function resize() {
-    var w = window.innerWidth, h = window.innerHeight;
+    // de canvas is 100lvh hoog: maat van de canvas zelf gebruiken, niet van het (wisselende) venster
+    var w = canvas.clientWidth || window.innerWidth, h = canvas.clientHeight || window.innerHeight;
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
-    narrow = w < 1100;
+    narrow = window.innerWidth < 1100;
   }
   window.addEventListener('resize', resize);
   resize();
 
-  var cur = null, phase = 0, yOff = 0, last = performance.now();
-  var PROFILE = Math.PI / 2 - 0.28, heading = -1, yaw = -PROFILE, yawVel = 0, pending = 0, bank = 0, pitch = 0;
-  var vel = null, started = false;
-  // gedempte veer met maximale snelheid (eenheden per seconde): zacht optrekken, kruissnelheid, zacht afremmen
-  function glideVal(v, t, key, maxV, dt) {
-    var a = (t - v) * 2.2 - vel[key] * 2.9;
-    vel[key] = Math.max(-maxV, Math.min(maxV, vel[key] + a * dt));
-    return v + vel[key] * dt;
+  // ---------- zwemgedrag ----------
+  // Het dier volgt niet de scrollbalk maar zwemt zelf: altijd vooruit, in de richting van zijn kop,
+  // over een wijde ovale ronde door de diepte. Bochten hebben een maximale draaisnelheid.
+  // Vanaf 200 m diepte zwemt hij in een rustige boog het beeld uit; terug omhoog komt hij weer aanzwemmen.
+  var depthSecs = [].slice.call(document.querySelectorAll('[data-depth]'));
+  function depthNow() {
+    var mid = window.innerHeight * 0.5, d = 0;
+    for (var i = 0; i < depthSecs.length; i++) {
+      var r = depthSecs[i].getBoundingClientRect();
+      if (r.top <= mid) {
+        var d0 = +depthSecs[i].dataset.depth, d1 = depthSecs[i + 1] ? +depthSecs[i + 1].dataset.depth : d0;
+        d = d0 + (d1 - d0) * Math.min(1, Math.max(0, (mid - r.top) / r.height));
+      }
+    }
+    return d;
   }
-  function glide(obj, prop, t, key, maxV, dt) { obj[prop] = glideVal(obj[prop], t, key, maxV, dt); }
+  var CAMZ = camera.position.z;
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  function wrapAngle(a) { while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI; return a; }
+
+  // de ronde, afgestemd op het scherm
+  function layout(st) {
+    var halfH = Math.tan((camera.fov / 2) * Math.PI / 180) * CAMZ, halfW = halfH * camera.aspect;
+    var visW = function (z) { return halfW * (CAMZ - z) / CAMZ; };
+    var o = { halfH: halfH, halfW: halfW, visW: visW };
+    if (!narrow) {
+      // breed scherm: een ronde in de vrije rechterhelft, de bochten in de diepte zijn zichtbaar en wijd
+      o.s = clamp(halfW * 0.12, 0.45, 0.8);
+      o.hl = 2.08 * o.s;
+      o.A = 1.7 * clamp(halfW / 5.04, 0.8, 1.3); o.B = 2.2;
+      // zo ver mogelijk naar rechts, maar op elk punt van de ronde met de hele orka binnen beeld
+      o.cx = Infinity;
+      for (var k = 0; k < 48; k++) {
+        var th = k / 48 * Math.PI * 2, z = o.B * Math.cos(th);
+        var hy = Math.atan2(o.A * Math.cos(th), -o.B * Math.sin(th));
+        var room = visW(z) * 0.93 - o.hl * Math.abs(Math.sin(hy)) - 0.35 * Math.abs(Math.cos(hy)) - 0.25 - o.A * Math.sin(th);
+        o.cx = Math.min(o.cx, room);
+      }
+      o.cy = -0.06 * halfH;
+      o.v = 0.7; o.turn = 0.5;
+    } else {
+      // smal scherm: hij steekt het scherm over (vooraan naar rechts, achteraan naar links) en keert buiten beeld
+      o.s = clamp(halfW * 0.26, 0.32, 0.75);
+      o.hl = 2.08 * o.s;
+      o.A = halfW + 0.6; o.B = 2.0; // keert net buiten beeld, zo is hij zo lang mogelijk te zien
+      o.cx = 0;
+      o.cy = st.pastHero ? 0 : -0.62 * halfH; // in de kop onder de tekst, daarna op de achtergrond
+      o.v = 0.75; o.turn = 0.8;
+    }
+    return o;
+  }
+  function loopPoint(o, th) { return { x: o.cx + o.A * Math.sin(th), z: o.B * Math.cos(th) }; }
+  function loopYaw(o, th) { return Math.atan2(o.A * Math.cos(th), -o.B * Math.sin(th)); }
+
+  var P = null, yaw = 0, yawRate = 0, bank = 0, pitch = 0, speed = 0;
+  var mode = 'loop', leaveSide = 1, gone = false, phase = 0, last = performance.now();
+  function placeOnLoop(o, th) {
+    var p = loopPoint(o, th);
+    P = { x: p.x, y: o.cy, z: p.z };
+    yaw = loopYaw(o, th); yawRate = 0; speed = o.v;
+  }
   var fogCol = new T.Color();
   var animalFade = 1, fadeMats = null, fadeShown = -1;
   function setAnimalOpacity(a) {
@@ -407,56 +459,58 @@
   function frame(now) {
     var dt = Math.min(0.05, (now - last) / 1000); last = now;
     var st = scrollState();
-    var target = reduce ? POSES[0] : st.pose;
-    var prevX = cur ? cur.x : target.x, prevY = cur ? cur.y + yOff : target.y;
-    var drop = narrow && !st.pastHero ? -0.66 : 0;
-    if (!cur || reduce) {
-      cur = { x: target.x, y: target.y, s: target.s };
-      vel = { x: 0, y: 0, s: 0, o: 0 };
-      if (reduce || !started) yOff = drop;
-      started = true;
-    } else {
-      // zwemmen met een eigen topsnelheid: hoe hard je ook scrolt, hij zakt of schiet nooit ineens weg
-      glide(cur, 'x', target.x, 'x', 0.32, dt);
-      glide(cur, 'y', target.y, 'y', 0.14, dt);
-      glide(cur, 's', target.s, 's', 0.18, dt);
-      yOff = glideVal(yOff, drop, 'o', 0.16, dt);
+    var o = layout(st);
+    var depth = depthNow();
+    var hl = orca ? o.hl : 2.6 * o.s;
+    if (!P) placeOnLoop(o, narrow ? -0.35 : -0.3);
+
+    // dieper dan 200 m: wegzwemmen; boven 170 m: weer meedoen (verschil voorkomt heen-en-weer)
+    if (mode === 'loop' && depth >= 200) { mode = 'leave'; leaveSide = narrow ? (Math.sin(yaw) >= 0 ? 1 : -1) : 1; } // breed scherm: weg via de vrije rechterkant
+    else if (mode === 'leave' && depth < 170) { mode = 'loop'; }
+    if (mode === 'loop' && gone) {
+      // terugkomen: buiten beeld rechts beginnen, naar links zwemmend
+      P = { x: o.visW(0) + hl + 0.8, y: o.cy, z: 0 };
+      yaw = -Math.PI / 2; yawRate = 0; speed = o.v; gone = false;
     }
 
-    var halfH = Math.tan((camera.fov / 2) * Math.PI / 180) * camera.position.z, halfW = halfH * camera.aspect;
-    var xf = narrow ? 0.45 : 1;
-    // op smalle schermen zwemt het dier in de opening onder de tekst, daarna op de achtergrond
-    // wijde bocht: tijdens het keren zwemt hij in een boog naar voren in plaats van op zijn plek te draaien
-    var arc = reduce ? 0 : Math.max(0, Math.cos(yaw) - Math.cos(PROFILE)) * 1.4;
-    holder.position.set(cur.x * halfW * xf, (cur.y + yOff) * halfH + (reduce ? 0 : Math.sin(now / 1700) * 0.08), arc);
-    holder.scale.setScalar(cur.s * (narrow ? Math.min(1, camera.aspect * 0.9 + 0.25) : 1));
-
-    // sturen: de kop wijst waar hij heen zwemt. In profiel, iets naar de kijker gedraaid;
-    // alleen bij het omkeren maakt hij een rustige bocht, overhellend als een echte walvis.
-    var vx = reduce ? 0 : (cur.x - prevX) / Math.max(dt, 0.001);
-    var vy = reduce ? 0 : (cur.y + yOff - prevY) / Math.max(dt, 0.001);
-    // pas omkeren als hij echt een stuk de andere kant op zwemt, niet bij elk klein scrollrukje
-    var moveDir = vx > 0.02 ? 1 : (vx < -0.02 ? -1 : 0);
-    if (moveDir && moveDir !== heading) pending += Math.abs(vx) * dt;
-    else pending = Math.max(0, pending - Math.abs(vx) * dt - dt * 0.05);
-    if (pending > 0.15) { heading = -heading; pending = 0; }
-    var yawT = heading * PROFILE;
-    if (reduce) { yaw = yawT; yawVel = 0; }
-    else {
-      // een veer met maximale draaisnelheid: zacht inzetten, rustig draaien, zacht uitkomen
-      yawVel += ((yawT - yaw) * 0.7 - yawVel * 1.7) * dt;
-      yawVel = Math.max(-0.42, Math.min(0.42, yawVel));
-      yaw += yawVel * dt;
+    if (reduce) {
+      // geen beweging gewenst: een stil, mooi profiel, en weg vanaf 200 m
+      placeOnLoop(o, narrow ? -0.35 : -0.3);
+      gone = depth >= 200;
+    } else if (!gone) {
+      var tx, ty, tz, vT;
+      if (mode === 'loop') {
+        // achtervolg een punt iets verderop op de ronde: altijd vooruit, nooit terug
+        var th = Math.atan2((P.x - o.cx) / o.A, P.z / o.B) + 0.55;
+        var c = loopPoint(o, th);
+        tx = c.x; tz = c.z; ty = o.cy + 0.22 * Math.sin(th * 2);
+        var dist = Math.hypot(c.x - P.x, c.z - P.z);
+        vT = o.v * (dist > 2.2 ? 1.25 : 1);
+      } else {
+        tx = leaveSide * (o.halfW * 2 + 10); tz = 0; ty = o.cy; vT = o.v * 1.4;
+      }
+      speed += (vT - speed) * Math.min(1, dt * 0.6);
+      // sturen met een begrensde, zacht aanzwellende draaisnelheid
+      var diff = wrapAngle(Math.atan2(tx - P.x, tz - P.z) - yaw);
+      var rateT = clamp(diff * 0.9, -o.turn, o.turn);
+      yawRate += (rateT - yawRate) * Math.min(1, dt * 1.2);
+      yaw = wrapAngle(yaw + yawRate * dt);
+      P.x += Math.sin(yaw) * speed * dt;
+      P.z += Math.cos(yaw) * speed * dt;
+      var vy = clamp((ty - P.y) * 0.5, -0.28, 0.28);
+      P.y += vy * dt;
+      pitch += (Math.atan2(vy, speed) * 0.8 - pitch) * Math.min(1, dt * 1.5);
+      bank += (clamp(-yawRate * 0.55, -0.28, 0.28) - bank) * Math.min(1, dt * 2);
+      // helemaal uit beeld? dan verbergen tot je weer omhoog scrolt
+      if (mode === 'leave' && (Math.abs(P.x) - hl > o.visW(P.z) + 0.3 || P.z < -14 || P.z > 7)) gone = true;
     }
-    var bankT = Math.max(-0.22, Math.min(0.22, -yawVel * 0.5));
-    bank += (bankT - bank) * Math.min(1, dt * 3);
-    // op en neer kantelen alleen als hij in profiel ligt; recht naar de kijker toe zou het een duik lijken
-    var side = Math.abs(Math.sin(yaw));
-    var pitchT = Math.max(-0.15, Math.min(0.15, vy * 0.3)) * side * side + (reduce ? 0 : Math.sin(now / 2600) * 0.03);
-    pitch += (pitchT - pitch) * Math.min(1, dt * 2);
-    swim.rotation.set(-pitch, yaw, bank + (reduce ? 0 : Math.sin(now / 2300) * 0.04));
+    if (reduce) { gone = depth >= 200; }
+
+    holder.position.set(P.x, P.y + (reduce ? 0 : Math.sin(now / 1700) * 0.05), P.z);
+    holder.scale.setScalar(o.s);
+    swim.rotation.set(-pitch, yaw, bank + (reduce ? 0 : Math.sin(now / 2300) * 0.03));
     // sneller zwemmen = sneller slaan met de staart
-    if (mixer) mixer.timeScale = Math.min(1.6, 0.55 + Math.abs(vx) * 1.4);
+    if (mixer) mixer.timeScale = clamp(0.6 + (speed - 0.6) * 0.9, 0.5, 1.3);
 
     if (!reduce) phase += dt * 3.1;
     if (orca) { if (mixer) mixer.update(reduce ? 0 : dt); }
@@ -485,8 +539,7 @@
     waterMat.uniforms.uPage.value = st.page;
     waterMat.uniforms.uAspect.value = camera.aspect;
     waterMat.uniforms.uWater.value.set(c[0] / 255, c[1] / 255, c[2] / 255);
-    var hide = reduce ? st.pastHero : false;
-    swim.visible = !hide;
+    swim.visible = !gone;
     var fadeT = narrow ? (st.pastHero ? 0.32 : 0.75) : 1;
     animalFade += (fadeT - animalFade) * (reduce ? 1 : Math.min(1, dt * 2));
     setAnimalOpacity(animalFade);
