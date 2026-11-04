@@ -343,7 +343,9 @@
     var halfH = Math.tan((camera.fov / 2) * Math.PI / 180) * camera.position.z, halfW = halfH * camera.aspect;
     var xf = narrow ? 0.45 : 1;
     // op smalle schermen zwemt het dier in de opening onder de tekst, daarna op de achtergrond
-    holder.position.set(cur.x * halfW * xf, (cur.y + yOff) * halfH + (reduce ? 0 : Math.sin(now / 1700) * 0.08), 0);
+    // wijde bocht: tijdens het keren zwemt hij in een boog naar voren in plaats van op zijn plek te draaien
+    var arc = reduce ? 0 : Math.max(0, Math.cos(yaw) - Math.cos(PROFILE)) * 1.4;
+    holder.position.set(cur.x * halfW * xf, (cur.y + yOff) * halfH + (reduce ? 0 : Math.sin(now / 1700) * 0.08), arc);
     holder.scale.setScalar(cur.s * (narrow ? Math.min(1, camera.aspect * 0.9 + 0.25) : 1));
 
     // sturen: de kop wijst waar hij heen zwemt. In profiel, iets naar de kijker gedraaid;
@@ -354,16 +356,16 @@
     var moveDir = vx > 0.02 ? 1 : (vx < -0.02 ? -1 : 0);
     if (moveDir && moveDir !== heading) pending += Math.abs(vx) * dt;
     else pending = Math.max(0, pending - Math.abs(vx) * dt - dt * 0.05);
-    if (pending > 0.3) { heading = -heading; pending = 0; }
+    if (pending > 0.15) { heading = -heading; pending = 0; }
     var yawT = heading * PROFILE;
     if (reduce) { yaw = yawT; yawVel = 0; }
     else {
       // een veer met maximale draaisnelheid: zacht inzetten, rustig draaien, zacht uitkomen
-      yawVel += ((yawT - yaw) * 1.2 - yawVel * 2.2) * dt;
-      yawVel = Math.max(-0.75, Math.min(0.75, yawVel));
+      yawVel += ((yawT - yaw) * 0.7 - yawVel * 1.7) * dt;
+      yawVel = Math.max(-0.42, Math.min(0.42, yawVel));
       yaw += yawVel * dt;
     }
-    var bankT = Math.max(-0.35, Math.min(0.35, -yawVel * 0.45));
+    var bankT = Math.max(-0.22, Math.min(0.22, -yawVel * 0.5));
     bank += (bankT - bank) * Math.min(1, dt * 3);
     // op en neer kantelen alleen als hij in profiel ligt; recht naar de kijker toe zou het een duik lijken
     var side = Math.abs(Math.sin(yaw));
