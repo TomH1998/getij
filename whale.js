@@ -54,9 +54,16 @@
     return { page: page, pose: pose, pastHero: heroEnd < window.innerHeight * 0.4 };
   }
 
+  var lastBody = "";
   function paintWater(page) {
     var c = waterAt(page);
     water.style.backgroundColor = 'rgb(' + c.join(',') + ')';
+    // Safari op de iPhone tekent vaste lagen niet door achter zijn knoppenbalk onderin, maar toont daar
+    // de achtergrond van de pagina. Die kleurt daarom mee met het water onderin beeld (de shader is
+    // daar ongeveer 0,34 x de waterkleur), zodat er geen donkere strook ontstaat.
+    var k = document.documentElement.classList.contains('real-water') ? 0.34 : 1;
+    var b = 'rgb(' + c.map(function (v) { return Math.round(v * k); }).join(',') + ')';
+    if (b !== lastBody) { document.body.style.backgroundColor = b; lastBody = b; }
     return c;
   }
 
