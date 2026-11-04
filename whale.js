@@ -430,13 +430,14 @@
       o.cy = -0.06 * halfH;
       o.v = 0.7; o.turn = 0.5;
     } else {
-      // smal scherm: hij steekt het scherm over (vooraan naar rechts, achteraan naar links) en keert buiten beeld
-      o.s = clamp(halfW * 0.26, 0.32, 0.75);
+      // smal scherm: een platte ronde over bijna de hele breedte, rustig tempo. Hij blijft altijd
+      // voor minstens zo'n 80% in beeld; alleen in de bocht steekt een stukje kop of staart buiten de rand.
+      o.s = clamp(halfW * 0.22, 0.25, 0.75);
       o.hl = 2.08 * o.s;
-      o.A = halfW + 0.6; o.B = 2.0; // keert net buiten beeld, zo is hij zo lang mogelijk te zien
+      o.A = halfW * 0.8; o.B = 1.6;
       o.cx = 0;
       o.cy = st.pastHero ? 0 : -0.62 * halfH; // in de kop onder de tekst, daarna op de achtergrond
-      o.v = 0.75; o.turn = 0.8;
+      o.v = 0.4; o.turn = 0.8;
     }
     return o;
   }
@@ -476,7 +477,7 @@
     else if (mode === 'leave' && depth < 170) { mode = 'loop'; }
     if (mode === 'loop' && gone) {
       // terugkomen: buiten beeld rechts beginnen, naar links zwemmend
-      P = { x: o.visW(0) + hl + 0.8, y: o.cy, z: 0 };
+      P = { x: o.visW(0) + hl * 0.8, y: o.cy, z: 0 }; // kop staat al net in beeld: meteen zichtbaar
       yaw = -Math.PI / 2; yawRate = 0; speed = o.v; gone = false;
     }
 
