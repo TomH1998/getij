@@ -1,0 +1,8 @@
+Model Information:
+* title:	Orca Whale Low Poly
+* source:	https://sketchfab.com/3d-models/orca-whale-low-poly-2c1f70cf36394fc7aed02f139ebb4873
+* author:	Rio2 (https://sketchfab.com/Rio2)
+
+Model License:
+* license type:	SKETCHFAB Standard (https://sketchfab.com/licenses)
+* requirements:	Under basic restrictions, use worldwide, on all types of media, commercially or not, and in all types of derivative works

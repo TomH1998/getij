@@ -203,6 +203,49 @@
   holder.add(shark);
   scene.add(holder);
 
+  // ---------- de orka: echt 3D-model met eigen zwemanimatie ----------
+  // "Orca Whale Low Poly" door Rio2 (Sketchfab, Free Standard-licentie).
+  // Lukt het laden niet, dan blijft de zelfgebouwde haai hierboven zwemmen.
+  var orca = null, mixer = null;
+  // draai zodat de kop op +z wijst, net als de haai (vastgesteld door te kijken)
+  var ORCA_YAW = Math.PI / 2;
+  if (T.GLTFLoader) {
+    new T.GLTFLoader().load('models/orca/scene.gltf', function (gltf) {
+      var model = gltf.scene;
+      model.traverse(function (o) {
+        if (!o.isMesh) return;
+        o.frustumCulled = false; // gevild model: de standaard-bounding box klopt niet
+        var m = o.material;
+        m.side = T.FrontSide;
+        m.flatShading = true; // de facetten mogen zichtbaar zijn: dat is de stijl
+        // puur zwart verdwijnt in diep water; een heel donker leisteen blijft leesbaar
+        if (m.color && m.color.r < 0.02 && m.color.g < 0.02) m.color.setHex(0x10181d);
+        if (m.name === 'Corak_Mata') m.color.setHex(0xeef3f2);
+        m.roughness = 0.55;
+        m.needsUpdate = true;
+      });
+      // op lengte schalen en centreren
+      var pivot = new T.Group();
+      pivot.add(model);
+      pivot.updateMatrixWorld(true);
+      var box = new T.Box3().setFromObject(model), size = new T.Vector3(), mid = new T.Vector3();
+      box.getSize(size); box.getCenter(mid);
+      var len = Math.max(size.x, size.z) || 1, k = (L * 0.8) / len; // iets kleiner: de rugvin maakt hem hoger dan de haai
+      model.position.sub(mid);
+      pivot.scale.setScalar(k);
+      pivot.rotation.y = ORCA_YAW;
+      orca = new T.Group();
+      orca.add(pivot);
+      if (gltf.animations && gltf.animations.length) {
+        mixer = new T.AnimationMixer(model);
+        mixer.clipAction(gltf.animations[0]).play();
+      }
+      holder.remove(shark);
+      holder.add(orca);
+      if (reduce) frame(performance.now());
+    }, undefined, function () { /* laat de haai staan */ });
+  }
+
   // ---------- zeesneeuw ----------
   var N = 360, flakePos = new Float32Array(N * 3);
   for (var n = 0; n < N; n++) {
@@ -281,7 +324,8 @@
     holder.scale.setScalar(cur.s * (narrow ? Math.min(1, camera.aspect * 0.9 + 0.25) : 1));
 
     if (!reduce) phase += dt * 3.1;
-    deform(phase);
+    if (orca) { if (mixer) mixer.update(reduce ? 0 : dt * 0.55); }
+    else deform(phase);
 
     var c = paintWater(st.page);
     fogCol.setRGB(c[0] / 255, c[1] / 255, c[2] / 255);
