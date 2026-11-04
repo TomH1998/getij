@@ -12,19 +12,20 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%23061922'/%3E%3Cpath d='M4 17c3.5-3 6.5-3 10 0s6.5 3 10 0 3.5-2.2 4.5-1.6' stroke='%237FE3E0' stroke-width='2.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="fonts.css">
 <style>
-/* Layout: een afdaling. Elke sectie ligt dieper in de waterkolom (0 m → 3.688 m),
-   een dieptemeter aan de rand loopt mee; koppen groot en kapitaal, tekst in rustige kolommen. */
+/* Layout: een afdaling. Een 3D-walvishaai zwemt mee door de waterkolom (0 m → 3.688 m) terwijl het
+   water donkerder wordt; de tekst wisselt per sectie van kant zodat de haai ruimte heeft.
+   Bewust één onderwaterwereld, in licht en donker thema gelijk. */
 :root {
-  --paper: #EEF4F3;        /* licht zeeschuim */
-  --paper-2: #E2ECEB;      /* schemerzone */
-  --paper-3: #D5E3E3;      /* middernachtzone */
-  --ink: #0B1F2A;          /* diep marine */
-  --ink-soft: #3C5562;
-  --line: #B9CDCF;
-  --buoy: #D94F04;         /* boei-oranje, het enige signaal */
-  --sea: #0D6874;          /* zeegroen voor links en details */
-  --card: #F7FAFA;
-  --deep: #061922;         /* de diepe band: in beide thema's donker */
+  --paper: #04141C;                    /* basis onder het water */
+  --paper-2: rgba(4, 22, 31, 0.58);    /* glas over het water */
+  --paper-3: rgba(2, 13, 20, 0.62);
+  --ink: #E8F1F0;
+  --ink-soft: #A9C2C6;
+  --line: rgba(159, 201, 207, 0.28);
+  --buoy: #FF7A33;         /* boei-oranje, het enige signaal */
+  --sea: #7FD8DA;          /* zeegroen voor links en details */
+  --card: rgba(8, 36, 48, 0.72);
+  --deep: #03111A;
   --deep-2: #0B2C38;
   --on-deep: #E8F1F0;
   --on-deep-soft: #9DB9BE;
@@ -40,25 +41,9 @@
   --step-4: clamp(3rem, 1.6rem + 6.4vw, 7.25rem);
   --wrap: 1180px;
 }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --paper: #0A1C25; --paper-2: #07161E; --paper-3: #041017;
-    --ink: #E4EEEE; --ink-soft: #A3BABF; --line: #1F3C48;
-    --buoy: #FF7A33; --sea: #6FD0D2; --card: #0F2631;
-    --deep: #03111A; --deep-2: #082430; --on-deep: #E8F1F0; --on-deep-soft: #9DB9BE; --glow: #7FE3E0;
-    color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --paper: #0A1C25; --paper-2: #07161E; --paper-3: #041017;
-  --ink: #E4EEEE; --ink-soft: #A3BABF; --line: #1F3C48;
-  --buoy: #FF7A33; --sea: #6FD0D2; --card: #0F2631;
-  --deep: #03111A; --deep-2: #082430; --on-deep: #E8F1F0; --on-deep-soft: #9DB9BE; --glow: #7FE3E0;
-  color-scheme: dark;
-}
 
 *, *::before, *::after { box-sizing: border-box; }
-:root { color-scheme: light; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+:root { color-scheme: dark; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
 body { margin: 0; }
 img { max-width: 100%; }
 [hidden] { display: none !important; }
@@ -128,13 +113,6 @@ a:focus-visible, button:focus-visible, input:focus-visible + label, label:focus-
 .hero .actions { display: flex; flex-wrap: wrap; gap: 12px; }
 .hero .btn-ghost { color: var(--on-deep); }
 .hero .btn-ghost:hover { background: var(--on-deep); color: var(--deep); }
-.shark { position: absolute; z-index: -1; width: clamp(180px, 26vw, 340px); right: 6%; top: 38%; opacity: 0.22; color: var(--glow); animation: glide 38s linear infinite; }
-@keyframes glide {
-  0% { transform: translateX(30vw) translateY(0); }
-  50% { transform: translateX(-30vw) translateY(-18px); }
-  50.01% { transform: translateX(-30vw) translateY(-18px) scaleX(-1); }
-  100% { transform: translateX(30vw) translateY(0) scaleX(-1); }
-}
 
 /* ---------- cijfers ---------- */
 .zone { padding-block: clamp(64px, 9vw, 128px); }
@@ -282,9 +260,45 @@ b.count-target, span.count-target { display: inline-block; }
 .meter-bar .m-strict { transition-delay: .3s; }
 .meter.waiting .meter-bar i { width: 0; }
 
+/* ---------- onderwaterwereld: water en walvishaai achter de inhoud ---------- */
+.water { position: fixed; inset: 0; z-index: -2; background: rgb(17, 102, 123); transition: background-color .3s linear; }
+#whale { position: fixed; inset: 0; width: 100%; height: 100%; z-index: -1; display: block; pointer-events: none; transition: opacity .6s; }
+.hero, .zone-1, .zone-2, .zone-3, .band { background: transparent; }
+.hero .lede { color: #D6E6E7; }
+.band::after { opacity: .6; }
+.solutions { background: transparent; border: 0; gap: 12px; }
+.sol, .sol.feature { background: var(--paper-2); border: 1px solid var(--line); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.sol.feature { background: var(--card); }
+.act label { background: var(--paper-3); border-color: var(--line); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.act label:hover { background: var(--card); }
+.act input:checked + label { background: var(--ink); color: #04141C; border-color: var(--ink); }
+.act input:checked + label p { color: #2C4752; }
+.act .box { border-color: currentColor; }
+.stats, .threats, .orgs, .pledge-bar { border-color: color-mix(in srgb, var(--ink) 70%, transparent); }
+.meter-bar .m-goal { background: var(--ink); }
+.gauge .read, .gauge .zone-name { background: rgba(3, 17, 26, 0.7); }
+
+/* Tekst wisselt van kant; de haai zwemt in de vrije helft */
+@media (min-width: 1100px) {
+  .lane-l .wrap > *, .lane-r .wrap > * { max-width: 640px; }
+  .lane-l .wrap > * { margin-right: auto; }
+  .lane-r .wrap > * { margin-left: auto; }
+  .lane-r .wrap.home, .lane-l .wrap.home { grid-template-columns: minmax(0, 1fr); }
+  .lane-l .stats, .lane-r .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .lane-l .stat:nth-child(3), .lane-r .stat:nth-child(3) { padding-left: 0; border-left: 0; }
+  .lane-l .why, .lane-r .why { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .lane-l .threat, .lane-r .threat { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); }
+  .lane-l .threat .body, .lane-r .threat .body { grid-column: 1 / -1; }
+  .lane-l .solutions, .lane-r .solutions, .lane-l .act-grid, .lane-r .act-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hero .wrap > * { max-width: 620px; }
+}
+@media (max-width: 1099px) {
+  .hero .wrap { padding-bottom: clamp(200px, 34vh, 280px); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  .shark { animation: none; }
+  .water { transition: none; }
 }
 </style>
 </head>
@@ -306,10 +320,12 @@ b.count-target, span.count-target { display: inline-block; }
   </div>
 </header>
 
+<div class="water" aria-hidden="true"></div>
+<canvas id="whale" aria-hidden="true"></canvas>
+
 <main id="top">
   <section class="hero" data-depth="0" data-zone="Sunlight zone">
     <canvas id="sea" aria-hidden="true"></canvas>
-    <svg class="shark" viewBox="0 0 200 72" aria-hidden="true"><path fill="currentColor" d="M0 10 L24 36 L2 62 L32 46 C62 52 96 54 120 53 L128 68 L137 52 C162 50 184 46 200 40 C186 33 164 28 140 27 L128 2 L116 26 C82 27 54 30 32 34 Z"/></svg>
     <div class="wrap">
       <div class="eyebrow"><span class="depth">0 m</span><span>Surface</span><span>·</span><span>71% of the planet</span></div>
       <h1>The ocean keeps us <em>alive.</em></h1>
@@ -321,7 +337,7 @@ b.count-target, span.count-target { display: inline-block; }
     </div>
   </section>
 
-  <section class="zone zone-1" id="numbers" data-depth="50" data-zone="Sunlight zone">
+  <section class="zone zone-1 lane-l" id="numbers" data-depth="50" data-zone="Sunlight zone">
     <div class="wrap">
       <div class="section-head">
         <div class="eyebrow"><span class="depth">50 m</span><span>Sunlight zone</span></div>
@@ -340,7 +356,7 @@ b.count-target, span.count-target { display: inline-block; }
     </div>
   </section>
 
-  <section class="zone zone-2" id="threats" data-depth="200" data-zone="Twilight zone">
+  <section class="zone zone-2 lane-r" id="threats" data-depth="200" data-zone="Twilight zone">
     <div class="wrap">
       <div class="section-head">
         <div class="eyebrow"><span class="depth">200 m</span><span>Twilight zone</span><span>·</span><span>Where sunlight fades</span></div>
@@ -391,7 +407,7 @@ b.count-target, span.count-target { display: inline-block; }
     </div>
   </section>
 
-  <section class="band" data-depth="600" data-zone="Twilight zone">
+  <section class="band lane-l" data-depth="600" data-zone="Twilight zone">
     <div class="wrap">
       <div class="eyebrow" style="color:var(--on-deep-soft)"><span class="depth" style="color:var(--glow)">600 m</span><span>Twilight zone</span></div>
       <blockquote>In fifty years, <b>71%</b> of open-ocean sharks and rays have disappeared.</blockquote>
@@ -399,7 +415,7 @@ b.count-target, span.count-target { display: inline-block; }
     </div>
   </section>
 
-  <section class="zone zone-2" id="solutions" data-depth="1000" data-zone="Midnight zone">
+  <section class="zone zone-2 lane-r" id="solutions" data-depth="1000" data-zone="Midnight zone">
     <div class="wrap">
       <div class="section-head">
         <div class="eyebrow"><span class="depth">1,000 m</span><span>Midnight zone</span><span>·</span><span>No more sunlight</span></div>
@@ -445,7 +461,7 @@ b.count-target, span.count-target { display: inline-block; }
     </div>
   </section>
 
-  <section class="zone zone-3" id="take-action" data-depth="3688" data-zone="Abyssal zone">
+  <section class="zone zone-3 lane-l" id="take-action" data-depth="3688" data-zone="Abyssal zone">
     <div class="wrap">
       <div class="section-head">
         <div class="eyebrow"><span class="depth">3,688 m</span><span>Average depth of the ocean</span></div>
@@ -467,7 +483,7 @@ b.count-target, span.count-target { display: inline-block; }
     </div>
   </section>
 
-  <section class="zone zone-1" id="north-sea" data-depth="3688" data-zone="Home">
+  <section class="zone zone-1 lane-r" id="north-sea" data-depth="3688" data-zone="Home">
     <div class="wrap home">
       <div class="text">
         <div class="eyebrow"><span class="depth">Back to the coast</span><span>North Sea &amp; Wadden Sea</span></div>
@@ -637,5 +653,7 @@ b.count-target, span.count-target { display: inline-block; }
   }
 })();
 </script>
+<script src="vendor/three.min.js"></script><script src="vendor/GLTFLoader.js"></script>
+<script src="whale.js"></script>
 </body>
 </html>
