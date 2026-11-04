@@ -409,47 +409,72 @@
   function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
   function wrapAngle(a) { while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI; return a; }
 
-  // de ronde, afgestemd op het scherm
+  // ---- elke ronde anders: breedte, diepte, kanteling, hoogte, golf en tempo wisselen per ronde ----
+  // (dezelfde rekenregels zijn vooraf 20 minuten gesimuleerd op desktop-, tablet- en telefoonformaten)
+  function randomLap(isNarrow) {
+    var r = function (a, b) { return a + (b - a) * Math.random(); };
+    return isNarrow
+      ? { aF: r(0.68, 0.8), B: r(1.35, 1.8), tilt: r(-0.15, 0.15), yF: r(-0.12, 0.12), wave: r(0.08, 0.22), k: Math.random() < 0.5 ? 1 : 2, vF: r(0.9, 1.1) }
+      : { aF: r(0.95, 1.12), B: r(1.9, 2.5), tilt: r(-0.2, 0.2), yF: r(-0.14, 0.08), wave: r(0.1, 0.3), k: Math.random() < 0.5 ? 1 : 2, vF: r(0.88, 1.08) };
+  }
+  function lerpLap(cur, tgt, f) { for (var key in cur) if (key !== 'k') cur[key] += (tgt[key] - cur[key]) * f; cur.k = tgt.k; }
+  // punt op de (gekantelde) ovale ronde, en terugrekenen van positie naar plek op de ronde
+  function loopPt(o, th) {
+    var u = o.A * Math.sin(th), w = o.B * Math.cos(th), c = Math.cos(o.tilt), s = Math.sin(o.tilt);
+    return { x: o.cx + u * c + w * s, z: -u * s + w * c };
+  }
+  function loopTheta(o, x, z) {
+    var dx = x - o.cx, c = Math.cos(o.tilt), s = Math.sin(o.tilt);
+    return Math.atan2((dx * c - z * s) / o.A, (dx * s + z * c) / o.B);
+  }
+  function loopHeading(o, th, dir) {
+    var a = loopPt(o, th), b = loopPt(o, th + 0.01 * dir);
+    return Math.atan2(b.x - a.x, b.z - a.z);
+  }
+
+  var dir = Math.random() < 0.5 ? 1 : -1; // elke bezoek linksom of rechtsom
+  var lapNarrow = null, lap = null, lapTgt = null, lapAcc = 0, prevTh = null;
+
+  // de ronde, afgestemd op het scherm en op de huidige ronde-variant
   function layout(st) {
     var halfH = Math.tan((camera.fov / 2) * Math.PI / 180) * CAMZ, halfW = halfH * camera.aspect;
     var visW = function (z) { return halfW * (CAMZ - z) / CAMZ; };
-    var o = { halfH: halfH, halfW: halfW, visW: visW };
+    if (lapNarrow !== narrow) { lap = randomLap(narrow); lapTgt = randomLap(narrow); lapNarrow = narrow; }
+    var o = { halfH: halfH, halfW: halfW, visW: visW, tilt: lap.tilt };
     if (!narrow) {
       // breed scherm: een ronde in de vrije rechterhelft, de bochten in de diepte zijn zichtbaar en wijd
       o.s = clamp(halfW * 0.12, 0.45, 0.8);
       o.hl = 2.08 * o.s;
-      o.A = 1.7 * clamp(halfW / 5.04, 0.8, 1.3); o.B = 2.2;
+      o.A = 1.7 * clamp(halfW / 5.04, 1.0, 1.3) * lap.aF; o.B = lap.B;
       // zo ver mogelijk naar rechts, maar op elk punt van de ronde met de hele orka binnen beeld
-      o.cx = Infinity;
+      o.cx = 0;
+      var room = Infinity;
       for (var k = 0; k < 48; k++) {
-        var th = k / 48 * Math.PI * 2, z = o.B * Math.cos(th);
-        var hy = Math.atan2(o.A * Math.cos(th), -o.B * Math.sin(th));
-        var room = visW(z) * 0.93 - o.hl * Math.abs(Math.sin(hy)) - 0.35 * Math.abs(Math.cos(hy)) - 0.25 - o.A * Math.sin(th);
-        o.cx = Math.min(o.cx, room);
+        var th = k / 48 * Math.PI * 2, p = loopPt(o, th), hy = loopHeading(o, th, dir);
+        room = Math.min(room, visW(p.z) * 0.93 - o.hl * Math.abs(Math.sin(hy)) - 0.35 * Math.abs(Math.cos(hy)) - 0.3 - p.x);
       }
-      o.cy = -0.06 * halfH;
-      o.v = 0.7; o.turn = 0.5;
+      o.cx = room;
+      o.cy = (-0.06 + lap.yF) * halfH;
+      o.v = 0.7 * lap.vF; o.turn = 0.5;
     } else {
       // smal scherm: een platte ronde over bijna de hele breedte, rustig tempo. Hij blijft altijd
-      // voor minstens zo'n 80% in beeld; alleen in de bocht steekt een stukje kop of staart buiten de rand.
+      // grotendeels in beeld; alleen in de bocht steekt een stukje kop of staart buiten de rand.
       o.s = clamp(halfW * 0.22, 0.25, 0.75);
       o.hl = 2.08 * o.s;
-      o.A = halfW * 0.8; o.B = 1.6;
+      o.A = halfW * lap.aF; o.B = lap.B;
       o.cx = 0;
-      o.cy = st.pastHero ? 0 : -0.62 * halfH; // in de kop onder de tekst, daarna op de achtergrond
-      o.v = 0.4; o.turn = 0.8;
+      o.cy = (st.pastHero ? 0 : -0.62) * halfH + lap.yF * halfH * 0.5; // in de kop onder de tekst, daarna op de achtergrond
+      o.v = 0.4 * lap.vF; o.turn = 0.8;
     }
     return o;
   }
-  function loopPoint(o, th) { return { x: o.cx + o.A * Math.sin(th), z: o.B * Math.cos(th) }; }
-  function loopYaw(o, th) { return Math.atan2(o.A * Math.cos(th), -o.B * Math.sin(th)); }
 
   var P = null, yaw = 0, yawRate = 0, bank = 0, pitch = 0, speed = 0;
   var mode = 'loop', leaveSide = 1, gone = false, phase = 0, last = performance.now();
   function placeOnLoop(o, th) {
-    var p = loopPoint(o, th);
+    var p = loopPt(o, th);
     P = { x: p.x, y: o.cy, z: p.z };
-    yaw = loopYaw(o, th); yawRate = 0; speed = o.v;
+    yaw = loopHeading(o, th, dir); yawRate = 0; speed = o.v;
   }
   var fogCol = new T.Color();
   var animalFade = 1, fadeMats = null, fadeShown = -1;
@@ -467,10 +492,11 @@
   function frame(now) {
     var dt = Math.min(0.05, (now - last) / 1000); last = now;
     var st = scrollState();
+    if (lap && !reduce) lerpLap(lap, lapTgt, Math.min(1, dt * 0.12));
     var o = layout(st);
     var depth = depthNow();
     var hl = orca ? o.hl : 2.6 * o.s;
-    if (!P) placeOnLoop(o, narrow ? -0.35 : -0.3);
+    if (!P) placeOnLoop(o, -0.35 * dir);
 
     // dieper dan 200 m: wegzwemmen; boven 170 m: weer meedoen (verschil voorkomt heen-en-weer)
     if (mode === 'loop' && depth >= 200) { mode = 'leave'; leaveSide = narrow ? (Math.sin(yaw) >= 0 ? 1 : -1) : 1; } // breed scherm: weg via de vrije rechterkant
@@ -483,15 +509,20 @@
 
     if (reduce) {
       // geen beweging gewenst: een stil, mooi profiel, en weg vanaf 200 m
-      placeOnLoop(o, narrow ? -0.35 : -0.3);
+      placeOnLoop(o, -0.35 * dir);
       gone = depth >= 200;
     } else if (!gone) {
       var tx, ty, tz, vT;
       if (mode === 'loop') {
         // achtervolg een punt iets verderop op de ronde: altijd vooruit, nooit terug
-        var th = Math.atan2((P.x - o.cx) / o.A, P.z / o.B) + 0.55;
-        var c = loopPoint(o, th);
-        tx = c.x; tz = c.z; ty = o.cy + 0.22 * Math.sin(th * 2);
+        var thn = loopTheta(o, P.x, P.z);
+        // ronde voltooid? dan langzaam overgaan naar een nieuwe variant
+        if (prevTh !== null) lapAcc += wrapAngle(thn - prevTh) * dir;
+        prevTh = thn;
+        if (lapAcc >= 2 * Math.PI) { lapAcc = 0; lapTgt = randomLap(narrow); }
+        var th = thn + 0.55 * dir;
+        var c = loopPt(o, th);
+        tx = c.x; tz = c.z; ty = o.cy + lap.wave * Math.sin(th * lap.k);
         var dist = Math.hypot(c.x - P.x, c.z - P.z);
         vT = o.v * (dist > 2.2 ? 1.25 : 1);
       } else {
