@@ -311,7 +311,7 @@
   resize();
 
   var cur = null, phase = 0, yOff = 0, last = performance.now();
-  var PROFILE = Math.PI / 2 - 0.28, heading = -1, yaw = -PROFILE, bank = 0, pitch = 0;
+  var PROFILE = Math.PI / 2 - 0.28, heading = -1, yaw = -PROFILE, yawVel = 0, pending = 0, bank = 0, pitch = 0;
   var fogCol = new T.Color();
   function frame(now) {
     var dt = Math.min(0.05, (now - last) / 1000); last = now;
@@ -333,13 +333,24 @@
     // alleen bij het omkeren maakt hij een rustige bocht, overhellend als een echte walvis.
     var vx = reduce ? 0 : (cur.x - prevX) / Math.max(dt, 0.001);
     var vy = reduce ? 0 : (cur.y + yOff - prevY) / Math.max(dt, 0.001);
-    if (vx > 0.12) heading = 1; else if (vx < -0.12) heading = -1;
+    // pas omkeren als hij echt een stuk de andere kant op zwemt, niet bij elk klein scrollrukje
+    var moveDir = vx > 0.02 ? 1 : (vx < -0.02 ? -1 : 0);
+    if (moveDir && moveDir !== heading) pending += Math.abs(vx) * dt;
+    else pending = Math.max(0, pending - Math.abs(vx) * dt - dt * 0.05);
+    if (pending > 0.3) { heading = -heading; pending = 0; }
     var yawT = heading * PROFILE;
-    if (reduce) yaw = yawT; else yaw += (yawT - yaw) * Math.min(1, dt * 1.4);
-    var turning = yawT - yaw;
-    var bankT = Math.max(-0.5, Math.min(0.5, turning * 0.35));
+    if (reduce) { yaw = yawT; yawVel = 0; }
+    else {
+      // een veer met maximale draaisnelheid: zacht inzetten, rustig draaien, zacht uitkomen
+      yawVel += ((yawT - yaw) * 1.2 - yawVel * 2.2) * dt;
+      yawVel = Math.max(-0.75, Math.min(0.75, yawVel));
+      yaw += yawVel * dt;
+    }
+    var bankT = Math.max(-0.35, Math.min(0.35, -yawVel * 0.45));
     bank += (bankT - bank) * Math.min(1, dt * 3);
-    var pitchT = Math.max(-0.3, Math.min(0.3, vy * 0.6)) + (reduce ? 0 : Math.sin(now / 2600) * 0.04);
+    // op en neer kantelen alleen als hij in profiel ligt; recht naar de kijker toe zou het een duik lijken
+    var side = Math.abs(Math.sin(yaw));
+    var pitchT = Math.max(-0.15, Math.min(0.15, vy * 0.3)) * side * side + (reduce ? 0 : Math.sin(now / 2600) * 0.03);
     pitch += (pitchT - pitch) * Math.min(1, dt * 2);
     swim.rotation.set(-pitch, yaw, bank + (reduce ? 0 : Math.sin(now / 2300) * 0.04));
     // sneller zwemmen = sneller slaan met de staart
