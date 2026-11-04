@@ -1,0 +1,45 @@
+/* Typografie in de stijl van het Aerolis-ontwerp: één strakke neo-grotesk (Inter Tight),
+   kleine letters, krappe letterafstand, kop in twee tinten. Wordt na de pagina-stijl geladen. */
+:root {
+  --f-display: "Inter Tight", "Helvetica Neue", Arial, system-ui, sans-serif;
+  --f-body: "Inter Tight", "Helvetica Neue", Arial, system-ui, sans-serif;
+}
+body { font-feature-settings: "ss01", "cv11"; letter-spacing: -0.005em; }
+
+/* koppen: medium gewicht, gewone hoofdletters, strak op elkaar */
+h1, h2, h3,
+.band blockquote, .act .t, .pledge-bar strong, .o-name, .facts dd, .slot b {
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: -0.035em;
+  line-height: 1.02;
+}
+h1, .hero h1, .intro h1 { font-weight: 500; letter-spacing: -0.045em; line-height: 0.98; max-width: 13ch; }
+h3 { letter-spacing: -0.025em; line-height: 1.1; }
+/* tweede tint: het slot van de kop iets teruggezet, zoals "Choose your edition." */
+.hero h1 em, .intro h1 em { font-style: normal; color: var(--ink-soft); font-weight: 400; }
+
+/* grote cijfers: licht, smal gespatieerd */
+.stat .num, .threat .big, .sol .fig {
+  font-weight: 400;
+  letter-spacing: -0.05em;
+  line-height: 0.95;
+}
+
+/* logo: kleine, ruim gespatieerde hoofdletters */
+.logo { font-weight: 600; font-size: 1.05rem; letter-spacing: 0.22em; text-transform: uppercase; }
+@media (max-width: 420px) { .logo { font-size: 0.95rem; } }
+
+/* navigatie en knoppen: gewone letters, pilvormige knoppen */
+.nav a { text-transform: none; letter-spacing: -0.005em; font-weight: 500; font-size: 0.9rem; }
+.btn {
+  text-transform: none;
+  letter-spacing: -0.005em;
+  font-weight: 500;
+  font-size: 0.9rem;
+  border-radius: 999px;
+  border-width: 1px;
+  padding: 10px 20px;
+}
+.site-head .btn { padding: 8px 16px; }
+@media (max-width: 420px) { .site-head .btn { padding: 7px 12px; font-size: 0.8rem; } }
