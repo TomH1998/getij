@@ -25,15 +25,16 @@
     return WATER[WATER.length - 1][1];
   }
 
-  // Houding van de haai per sectie: x/y als deel van de halve schermbreedte/-hoogte, yaw = zwemrichting
+  // Plek van het dier per sectie: x/y als deel van de halve schermbreedte/-hoogte, s = formaat.
+  // De kijkrichting staat hier bewust niet in: die volgt uit de zwemrichting (zie frame()).
   var POSES = [
-    { x: 0.46, y: -0.08, yaw: -1.1, pitch: 0.05, s: 1.15 },  // oppervlak
-    { x: 0.55, y: 0.00, yaw: -2.3, pitch: 0.00, s: 0.90 },   // waarom de oceaan ertoe doet
-    { x: -0.55, y: -0.05, yaw: 1.2, pitch: -0.18, s: 0.85 }, // bedreigingen, duikt
-    { x: 0.50, y: 0.10, yaw: -1.6, pitch: -0.10, s: 0.70 },  // quote
-    { x: -0.55, y: 0.00, yaw: 2.0, pitch: 0.00, s: 0.75 },   // oplossingen
-    { x: 0.55, y: -0.05, yaw: -1.3, pitch: 0.05, s: 0.70 },  // wat jij kunt doen
-    { x: -0.55, y: 0.05, yaw: 1.4, pitch: 0.20, s: 0.80 }    // terug naar de kust, stijgt
+    { x: 0.46, y: -0.08, s: 1.15 },  // oppervlak
+    { x: 0.50, y: 0.00, s: 0.90 },   // waarom de oceaan ertoe doet
+    { x: -0.55, y: -0.05, s: 0.85 }, // bedreigingen
+    { x: 0.50, y: 0.10, s: 0.70 },   // quote
+    { x: -0.55, y: 0.00, s: 0.75 },  // oplossingen
+    { x: 0.55, y: -0.05, s: 0.70 },  // wat jij kunt doen
+    { x: -0.55, y: 0.05, s: 0.80 }   // terug naar de kust
   ];
 
   function lerp(a, b, f) { return a + (b - a) * f; }
@@ -48,7 +49,7 @@
       if (r.top <= mid) { idx = i; f = Math.min(1, Math.max(0, (mid - r.top) / r.height)); }
     }
     var a = POSES[Math.min(idx, POSES.length - 1)], b = POSES[Math.min(idx + 1, POSES.length - 1)], e = ease(f);
-    var pose = { x: lerp(a.x, b.x, e), y: lerp(a.y, b.y, e), yaw: lerp(a.yaw, b.yaw, e), pitch: lerp(a.pitch, b.pitch, e), s: lerp(a.s, b.s, e) };
+    var pose = { x: lerp(a.x, b.x, e), y: lerp(a.y, b.y, e), s: lerp(a.s, b.s, e) };
     var heroEnd = sections[0] ? sections[0].getBoundingClientRect().bottom : 0;
     return { page: page, pose: pose, pastHero: heroEnd < window.innerHeight * 0.4 };
   }
@@ -200,7 +201,11 @@
   shark.add(eyeL, eyeR, mouth);
 
   var holder = new T.Group();
-  holder.add(shark);
+  // swim draagt de kijkrichting (yaw), het op- en neerduiken en het overhellen in bochten
+  var swim = new T.Group();
+  swim.rotation.order = "YXZ";
+  swim.add(shark);
+  holder.add(swim);
   scene.add(holder);
 
   // ---------- de orka: echt 3D-model met eigen zwemanimatie ----------
@@ -240,8 +245,8 @@
         mixer = new T.AnimationMixer(model);
         mixer.clipAction(gltf.animations[0]).play();
       }
-      holder.remove(shark);
-      holder.add(orca);
+      swim.remove(shark);
+      swim.add(orca);
       if (reduce) frame(performance.now());
     }, undefined, function () { /* laat de haai staan */ });
   }
@@ -306,25 +311,42 @@
   resize();
 
   var cur = null, phase = 0, yOff = 0, last = performance.now();
+  var PROFILE = Math.PI / 2 - 0.28, heading = -1, yaw = -PROFILE, bank = 0, pitch = 0;
   var fogCol = new T.Color();
   function frame(now) {
     var dt = Math.min(0.05, (now - last) / 1000); last = now;
     var st = scrollState();
     var target = reduce ? POSES[0] : st.pose;
-    if (!cur || reduce) cur = { x: target.x, y: target.y, yaw: target.yaw, pitch: target.pitch, s: target.s };
-    else for (var k in cur) cur[k] += (target[k] - cur[k]) * Math.min(1, dt * 2.4);
+    var prevX = cur ? cur.x : target.x, prevY = cur ? cur.y + yOff : target.y;
+    if (!cur || reduce) cur = { x: target.x, y: target.y, s: target.s };
+    else for (var k in cur) cur[k] += (target[k] - cur[k]) * Math.min(1, dt * 1.6);
 
     var halfH = Math.tan((camera.fov / 2) * Math.PI / 180) * camera.position.z, halfW = halfH * camera.aspect;
     var xf = narrow ? 0.45 : 1;
-    // op smalle schermen zwemt de haai in de opening onder de tekst, daarna op de achtergrond
+    // op smalle schermen zwemt het dier in de opening onder de tekst, daarna op de achtergrond
     var drop = narrow && !st.pastHero ? -0.66 : 0;
     yOff += (drop - yOff) * (reduce ? 1 : Math.min(1, dt * 2.4));
     holder.position.set(cur.x * halfW * xf, (cur.y + yOff) * halfH + (reduce ? 0 : Math.sin(now / 1700) * 0.08), 0);
-    holder.rotation.set(cur.pitch, cur.yaw, reduce ? 0 : Math.sin(now / 2300) * 0.05);
     holder.scale.setScalar(cur.s * (narrow ? Math.min(1, camera.aspect * 0.9 + 0.25) : 1));
 
+    // sturen: de kop wijst waar hij heen zwemt. In profiel, iets naar de kijker gedraaid;
+    // alleen bij het omkeren maakt hij een rustige bocht, overhellend als een echte walvis.
+    var vx = reduce ? 0 : (cur.x - prevX) / Math.max(dt, 0.001);
+    var vy = reduce ? 0 : (cur.y + yOff - prevY) / Math.max(dt, 0.001);
+    if (vx > 0.12) heading = 1; else if (vx < -0.12) heading = -1;
+    var yawT = heading * PROFILE;
+    if (reduce) yaw = yawT; else yaw += (yawT - yaw) * Math.min(1, dt * 1.4);
+    var turning = yawT - yaw;
+    var bankT = Math.max(-0.5, Math.min(0.5, turning * 0.35));
+    bank += (bankT - bank) * Math.min(1, dt * 3);
+    var pitchT = Math.max(-0.3, Math.min(0.3, vy * 0.6)) + (reduce ? 0 : Math.sin(now / 2600) * 0.04);
+    pitch += (pitchT - pitch) * Math.min(1, dt * 2);
+    swim.rotation.set(-pitch, yaw, bank + (reduce ? 0 : Math.sin(now / 2300) * 0.04));
+    // sneller zwemmen = sneller slaan met de staart
+    if (mixer) mixer.timeScale = Math.min(1.6, 0.55 + Math.abs(vx) * 1.4);
+
     if (!reduce) phase += dt * 3.1;
-    if (orca) { if (mixer) mixer.update(reduce ? 0 : dt * 0.55); }
+    if (orca) { if (mixer) mixer.update(reduce ? 0 : dt); }
     else deform(phase);
 
     var c = paintWater(st.page);
